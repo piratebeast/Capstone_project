@@ -41,17 +41,22 @@ validation_dataset = tf.keras.utils.image_dataset_from_directory(
 
 # --- 3. BUILD THE RESNET50 ARCHITECTURE ---
 print("\nDownloading and building ResNet50 model...")
-# Load the pre-trained brain, without the final 1000-class guessing layer
 base_model = ResNet50(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
-
-# Freeze the brain so it doesn't forget how to see shapes and edges
 base_model.trainable = False 
 
-# Attach our custom output node for the Yes/No percentage
+# 1. Create the Augmentation Layer
+data_augmentation = tf.keras.Sequential([
+  layers.RandomFlip("horizontal"),
+  layers.RandomRotation(0.1), # Rotates up to 10%
+  layers.RandomZoom(0.2),     # Zooms in up to 20%
+])
+
+# 2. Add it to your model pipeline BEFORE the base_model
 model = models.Sequential([
-    base_model,
+    data_augmentation,        # Scrambles the image first
+    base_model,               # Extracts features
     layers.GlobalAveragePooling2D(), 
-    layers.Dense(1, activation='sigmoid') # Gives us the 0.0 to 1.0 probability
+    layers.Dense(1, activation='sigmoid') 
 ])
 
 # --- 4. COMPILE AND TRAIN ---
@@ -70,5 +75,5 @@ history = model.fit(
 
 # --- 5. SAVE THE FINISHED MODEL ---
 print("\nTraining complete! Saving the model for the API...")
-model.save('acne_mvp_model.keras')
-print("Model saved as 'acne_mvp_model.keras'. You are ready to build the API gateway!")
+model.save('acne_v2_model.keras')
+print("Model saved as 'acne_v2_model.keras'. You are ready to build the API gateway!")

@@ -4,7 +4,7 @@ import numpy as np
 
 # 1. Load your trained MVP model
 print("Loading model...")
-model = tf.keras.models.load_model('acne_v2_model.keras')
+model = tf.keras.models.load_model('acne_mvp_model.keras')
 
 # 2. Load the single user image (Just like your API will do!)
 image_path = 'test_photo.jpg' 

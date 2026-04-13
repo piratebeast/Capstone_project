@@ -61,12 +61,13 @@ print(f"wrinkles_present : {total_wrinkles} images")
 print(f"Class weights    : {class_weight}")
 
 # --- 4. DATA PIPELINE ---
-# Geometric augmentation only — no brightness/contrast
-# Edge-detected images don't benefit from color augmentation
+# NEW — add brightness/contrast since these are real color photos now
 data_augmentation = tf.keras.Sequential([
     layers.RandomFlip("horizontal"),
     layers.RandomRotation(0.05),
     layers.RandomZoom(0.1),
+    layers.RandomBrightness(0.2),   # ← handles different lighting
+    layers.RandomContrast(0.2),     # ← handles different skin tones
 ])
 
 def prepare(ds, augment=False):
@@ -152,7 +153,7 @@ callbacks_phase2 = [
         verbose=1
     ),
     ModelCheckpoint(
-        '/content/drive/MyDrive/wrinkles_v1_production.keras',
+        '/content/drive/MyDrive/wrinkles_v2_production.keras',
         monitor='val_auc',
         save_best_only=True,
         mode='max',
@@ -176,4 +177,4 @@ history2 = model.fit(
 
 print("\n✅ Training complete!")
 print("Phase 1 model → wrinkles_phase1.keras")
-print("Final model   → wrinkles_v1_production.keras")
+print("Final model   → wrinkles_v2_production.keras")

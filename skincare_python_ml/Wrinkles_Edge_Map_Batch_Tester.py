@@ -7,7 +7,7 @@ import cv2
 # --- 1. CONFIGURATION ---
 MODEL_PATH  = r'D:\code\Capstone_project\skincare_python_ml\wrinkles_phase1_v2.keras'
 TEST_FOLDER = r'E:\dataset_of_capstone\test_images'
-THRESHOLD   = 0.65   # ← raised from 0.5 to reduce false positives
+THRESHOLD   = 0.70   # ← raised from 0.5 to reduce false positives
 
 print("Loading model...")
 try:

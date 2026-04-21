@@ -6,7 +6,7 @@ import os
 
 # --- 1. CONFIGURATION ---
 # Replace with the exact absolute path to where your model is saved
-MODEL_PATH = r'D:\code\Capstone_project\skincare_python_ml\redness_v1_production.keras' 
+MODEL_PATH = r'D:\code\Capstone_project\skincare_python_ml\gender_production.keras' 
 TEST_FOLDER = r'E:\dataset_of_capstone\test_images'
 
 print("Loading model...")

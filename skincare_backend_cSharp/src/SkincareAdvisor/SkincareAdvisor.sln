@@ -1,15 +1,27 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.37027.9 d17.14
+VisualStudioVersion = 17.14.37027.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkincareAdvisor.API", "SkincareAdvisor.API\SkincareAdvisor.API.csproj", "{4CA4B2E6-5480-4067-A688-7AE42F1BC2AE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{79076C99-3EA5-4B65-B592-CA127CA279F9} = {79076C99-3EA5-4B65-B592-CA127CA279F9}
+		{D6A37EFB-515E-40C0-A538-760AE50FD545} = {D6A37EFB-515E-40C0-A538-760AE50FD545}
+		{F3125BC8-DD2F-441B-B677-A227782A72DD} = {F3125BC8-DD2F-441B-B677-A227782A72DD}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkincareAdvisor.Domain", "SkincareAdvisor.Domain\SkincareAdvisor.Domain.csproj", "{79076C99-3EA5-4B65-B592-CA127CA279F9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkincareAdvisor.Application", "SkincareAdvisor.Application\SkincareAdvisor.Application.csproj", "{D6A37EFB-515E-40C0-A538-760AE50FD545}"
+	ProjectSection(ProjectDependencies) = postProject
+		{79076C99-3EA5-4B65-B592-CA127CA279F9} = {79076C99-3EA5-4B65-B592-CA127CA279F9}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkincareAdvisor.Infrastructure", "SkincareAdvisor.Infrastructure\SkincareAdvisor.Infrastructure.csproj", "{F3125BC8-DD2F-441B-B677-A227782A72DD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{79076C99-3EA5-4B65-B592-CA127CA279F9} = {79076C99-3EA5-4B65-B592-CA127CA279F9}
+		{D6A37EFB-515E-40C0-A538-760AE50FD545} = {D6A37EFB-515E-40C0-A538-760AE50FD545}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,0 +1,13 @@
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\bin\Debug\net9.0\SkincareAdvisor.Domain.deps.json
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\bin\Debug\net9.0\SkincareAdvisor.Domain.dll
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\bin\Debug\net9.0\SkincareAdvisor.Domain.pdb
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\obj\Debug\net9.0\SkincareAdvisor.Domain.csproj.AssemblyReference.cache
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\obj\Debug\net9.0\SkincareAdvisor.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\obj\Debug\net9.0\SkincareAdvisor.Domain.AssemblyInfoInputs.cache
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\obj\Debug\net9.0\SkincareAdvisor.Domain.AssemblyInfo.cs
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\obj\Debug\net9.0\SkincareAdvisor.Domain.csproj.CoreCompileInputs.cache
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\obj\Debug\net9.0\SkincareAdvisor.Domain.sourcelink.json
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\obj\Debug\net9.0\SkincareAdvisor.Domain.dll
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\obj\Debug\net9.0\refint\SkincareAdvisor.Domain.dll
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\obj\Debug\net9.0\SkincareAdvisor.Domain.pdb
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Domain\obj\Debug\net9.0\ref\SkincareAdvisor.Domain.dll

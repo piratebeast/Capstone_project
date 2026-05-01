@@ -1,0 +1,6 @@
+@SkincareAdvisor.API_HostAddress = http://localhost:5183
+
+GET {{SkincareAdvisor.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

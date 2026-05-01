@@ -1,0 +1,71 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{F3125BC8-DD2F-441B-B677-A227782A72DD}|SkincareAdvisor.Infrastructure\\SkincareAdvisor.Infrastructure.csproj|d:\\code\\capstone_project\\skincare_backend_csharp\\src\\skincareadvisor\\skincareadvisor.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F3125BC8-DD2F-441B-B677-A227782A72DD}|SkincareAdvisor.Infrastructure\\SkincareAdvisor.Infrastructure.csproj|solutionrelative:skincareadvisor.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D6A37EFB-515E-40C0-A538-760AE50FD545}|SkincareAdvisor.Application\\SkincareAdvisor.Application.csproj|d:\\code\\capstone_project\\skincare_backend_csharp\\src\\skincareadvisor\\skincareadvisor.application\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D6A37EFB-515E-40C0-A538-760AE50FD545}|SkincareAdvisor.Application\\SkincareAdvisor.Application.csproj|solutionrelative:skincareadvisor.application\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{79076C99-3EA5-4B65-B592-CA127CA279F9}|SkincareAdvisor.Domain\\SkincareAdvisor.Domain.csproj|d:\\code\\capstone_project\\skincare_backend_csharp\\src\\skincareadvisor\\skincareadvisor.domain\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{79076C99-3EA5-4B65-B592-CA127CA279F9}|SkincareAdvisor.Domain\\SkincareAdvisor.Domain.csproj|solutionrelative:skincareadvisor.domain\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Infrastructure\\Class1.cs",
+              "RelativeDocumentMoniker": "SkincareAdvisor.Infrastructure\\Class1.cs",
+              "ToolTip": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Infrastructure\\Class1.cs",
+              "RelativeToolTip": "SkincareAdvisor.Infrastructure\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T11:32:50.742Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Application\\Class1.cs",
+              "RelativeDocumentMoniker": "SkincareAdvisor.Application\\Class1.cs",
+              "ToolTip": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Application\\Class1.cs",
+              "RelativeToolTip": "SkincareAdvisor.Application\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T11:32:34.693Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Domain\\Class1.cs",
+              "RelativeDocumentMoniker": "SkincareAdvisor.Domain\\Class1.cs",
+              "ToolTip": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Domain\\Class1.cs",
+              "RelativeToolTip": "SkincareAdvisor.Domain\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-01T11:32:14.132Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

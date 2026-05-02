@@ -13,9 +13,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SkincareAdvisor.Application\SkincareAdvisor.Application.csproj" />
     <ProjectReference Include="..\SkincareAdvisor.Domain\SkincareAdvisor.Domain.csproj" />
   </ItemGroup>
 

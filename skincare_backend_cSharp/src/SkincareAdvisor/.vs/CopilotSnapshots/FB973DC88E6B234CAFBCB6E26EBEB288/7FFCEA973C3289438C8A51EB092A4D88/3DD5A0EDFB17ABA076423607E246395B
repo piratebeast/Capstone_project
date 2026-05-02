@@ -1,0 +1,51 @@
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using SkincareAdvisor.Application.DTOs;
+using SkincareAdvisor.Application.Interfaces;
+using SkincareAdvisor.Domain.Entities;
+
+namespace SkincareAdvisor.Infrastructure.Services
+{
+    public class AuthService : IAuthService
+    {
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IConfiguration _configuration;
+
+        //Dependency Injection: We inject UserManager and IConfiguration to handle user operations and access app settings.
+        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration)
+        {
+            _userManager = userManager;
+            _configuration = configuration;
+        }
+
+        public async Task<AuthResponse> RegisterAsync(ResigterRequest request)
+        {
+            var user = new ApplicationUser
+            {
+                UserName = request.Email,
+                Email = request.Email,
+                FullName = request.FullName,
+
+            };
+
+            if (request.username == null)
+            {
+                return new AuthResponse { IsSuccess = false, Message = "Username is required." };
+            }
+
+            var isPasswordValid = ValidatePassword(request.Password);
+
+            if(!isPasswordValid)
+            {
+                return new AuthResponse { IsSuccess = false, Message = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character." };
+            }
+
+            var token = await _userManager.CreateAsync(user, request.Password);
+
+        }
+    }
+}

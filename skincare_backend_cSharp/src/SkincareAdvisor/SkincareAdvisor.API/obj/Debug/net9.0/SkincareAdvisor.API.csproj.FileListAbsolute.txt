@@ -182,3 +182,5 @@ D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdv
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\bin\Debug\net9.0\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\bin\Debug\net9.0\SkincareAdvisor.Application.dll
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\bin\Debug\net9.0\SkincareAdvisor.Application.pdb

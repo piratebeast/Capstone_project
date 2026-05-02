@@ -16,3 +16,5 @@ D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdv
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Infrastructure\obj\Debug\net9.0\SkincareAdvisor.Infrastructure.pdb
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Infrastructure\obj\Debug\net9.0\SkincareAdvisor.Infrastructure.genruntimeconfig.cache
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Infrastructure\obj\Debug\net9.0\ref\SkincareAdvisor.Infrastructure.dll
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Infrastructure\bin\Debug\net9.0\SkincareAdvisor.Application.dll
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.Infrastructure\bin\Debug\net9.0\SkincareAdvisor.Application.pdb

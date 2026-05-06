@@ -1,0 +1,59 @@
+﻿using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http;
+
+namespace SkincareAdvisor.Application.DTOs
+{
+        /// <summary>
+        /// Represents the request coming from the client application, containing the user's uploaded facial image for analysis.
+        /// </summary>
+        public record ScanRequestDTO(IFormFile image);
+
+        /// <summary>
+        /// The main wrapper object that deserializes the JSON response from the Python AI service, combining outputs of multiple AI models.
+        /// </summary>
+        public record AiScanResponse(
+            [property: JsonPropertyName("diagnostics")] DiagnosticsDto Diagnostics,
+            [property: JsonPropertyName("routine_class")] string RoutineClass,
+            [property: JsonPropertyName("confidence")] double Confidence,
+            [property: JsonPropertyName("regimen_schedule")] RegimenScheduleDto RegimenSchedule
+        );
+
+        /// <summary>
+        /// Maps the first AI model's results (CNN), containing numerical scores for facial features and a predicted gender.
+        /// </summary>
+        public record DiagnosticsDto(
+            [property: JsonPropertyName("acne")] double Acne,
+            [property: JsonPropertyName("dark_spots")] double DarkSpots,
+            [property: JsonPropertyName("wrinkles")] double Wrinkles,
+            [property: JsonPropertyName("redness")] double Redness,
+            [property: JsonPropertyName("dark_circles")] double DarkCircles,
+            [property: JsonPropertyName("gender")] string Gender
+        );
+
+        /// <summary>
+        /// Maps the second AI model's results (Random Forest), containing categorized lists of recommended skincare routines.
+        /// </summary>
+        public record RegimenScheduleDto(
+            [property: JsonPropertyName("daily_am")] List<RoutineStepDto> DailyAm,
+            [property: JsonPropertyName("daily_pm")] List<RoutineStepDto> DailyPm,
+            [property: JsonPropertyName("weekly_treatments")] List<WeeklyTreatmentDto> WeeklyTreatments
+        );
+
+        /// <summary>
+        /// Details a specific product, step, and purpose for daily skincare routines.
+        /// </summary>
+        public record RoutineStepDto(
+            [property: JsonPropertyName("step")] int Step,
+            [property: JsonPropertyName("product")] string Product,
+            [property: JsonPropertyName("purpose")] string Purpose
+        );
+
+        /// <summary>
+        /// Details specific products, instructions, and frequencies for weekly skincare treatments.
+        /// </summary>
+        public record WeeklyTreatmentDto(
+            [property: JsonPropertyName("product")] string Product,
+            [property: JsonPropertyName("frequency")] string Frequency,
+            [property: JsonPropertyName("instructions")] string Instructions
+        );
+}

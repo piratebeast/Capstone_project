@@ -8,7 +8,7 @@
             "applicationUrl": "http://localhost:5183",
             "environmentVariables": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
-                "JwtSettings__Key": "YOUR_SUPER_SECRET_KEY_MUST_BE_AT_LEAST_32_CHARACTERS_LONG!"
+                "JwtSettings__Key": "DIIe0yIvzAd5bOLy5I+G+t6riIzvVQ7iXhjS5UOs6/s="
             }
         },
         "https": {
@@ -18,7 +18,7 @@
             "applicationUrl": "https://localhost:7126;http://localhost:5183",
             "environmentVariables": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
-                "JwtSettings__Key": "YOUR_SUPER_SECRET_KEY_MUST_BE_AT_LEAST_32_CHARACTERS_LONG!"
+                "JwtSettings__Key": "DIIe0yIvzAd5bOLy5I+G+t6riIzvVQ7iXhjS5UOs6/s="
             }
         }
     }

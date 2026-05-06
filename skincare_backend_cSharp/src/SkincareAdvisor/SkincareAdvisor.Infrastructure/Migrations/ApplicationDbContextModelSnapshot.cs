@@ -232,6 +232,50 @@ namespace SkincareAdvisor.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("SkincareAdvisor.Domain.Entities.ScanHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("Acne")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Confidence")
+                        .HasColumnType("float");
+
+                    b.Property<double>("DarkCircles")
+                        .HasColumnType("float");
+
+                    b.Property<double>("DarkSpots")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Redness")
+                        .HasColumnType("float");
+
+                    b.Property<string>("RoutineClass")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ScanDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Wrinkles")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ScanHistories");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -281,6 +325,106 @@ namespace SkincareAdvisor.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SkincareAdvisor.Domain.Entities.ScanHistory", b =>
+                {
+                    b.OwnsMany("SkincareAdvisor.Domain.Entities.RoutineStepEntity", "DailyAm", b1 =>
+                        {
+                            b1.Property<Guid>("ScanHistoryId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Product")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Purpose")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<int>("Step")
+                                .HasColumnType("int");
+
+                            b1.HasKey("ScanHistoryId", "__synthesizedOrdinal");
+
+                            b1.ToTable("ScanHistories");
+
+                            b1.ToJson("DailyAm");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ScanHistoryId");
+                        });
+
+                    b.OwnsMany("SkincareAdvisor.Domain.Entities.RoutineStepEntity", "DailyPm", b1 =>
+                        {
+                            b1.Property<Guid>("ScanHistoryId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Product")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Purpose")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<int>("Step")
+                                .HasColumnType("int");
+
+                            b1.HasKey("ScanHistoryId", "__synthesizedOrdinal");
+
+                            b1.ToTable("ScanHistories");
+
+                            b1.ToJson("DailyPm");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ScanHistoryId");
+                        });
+
+                    b.OwnsMany("SkincareAdvisor.Domain.Entities.WeeklyTreatmentEntity", "WeeklyTreatments", b1 =>
+                        {
+                            b1.Property<Guid>("ScanHistoryId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Frequency")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Instructions")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Product")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.HasKey("ScanHistoryId", "__synthesizedOrdinal");
+
+                            b1.ToTable("ScanHistories");
+
+                            b1.ToJson("WeeklyTreatments");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ScanHistoryId");
+                        });
+
+                    b.Navigation("DailyAm");
+
+                    b.Navigation("DailyPm");
+
+                    b.Navigation("WeeklyTreatments");
                 });
 #pragma warning restore 612, 618
         }

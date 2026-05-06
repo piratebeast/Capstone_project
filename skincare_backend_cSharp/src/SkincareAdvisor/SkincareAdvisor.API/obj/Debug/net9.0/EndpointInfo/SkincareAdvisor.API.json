@@ -67,41 +67,34 @@
         }
       }
     },
-    "/WeatherForecast": {
-      "get": {
+    "/api/Scan/analyze": {
+      "post": {
         "tags": [
-          "WeatherForecast"
+          "Scan"
         ],
-        "operationId": "GetWeatherForecast",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WeatherForecast"
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
                   }
                 }
               },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WeatherForecast"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WeatherForecast"
-                  }
+              "encoding": {
+                "image": {
+                  "style": "form"
                 }
               }
             }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -139,29 +132,6 @@
             "nullable": true
           },
           "gender": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "WeatherForecast": {
-        "type": "object",
-        "properties": {
-          "date": {
-            "type": "string",
-            "format": "date"
-          },
-          "temperatureC": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "temperatureF": {
-            "type": "integer",
-            "format": "int32",
-            "readOnly": true
-          },
-          "summary": {
             "type": "string",
             "nullable": true
           }

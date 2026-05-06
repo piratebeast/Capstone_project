@@ -23,11 +23,14 @@ namespace SkincareAdvisor.Infrastructure.Persistence
 
         }
 
+        public DbSet<ScanHistory> ScanHistories { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
-            // We can add custom database table configurations here later if needed
+            builder.Entity<ScanHistory>().OwnsMany(s => s.DailyAm, a => a.ToJson());
+            builder.Entity<ScanHistory>().OwnsMany(s => s.DailyPm, p => p.ToJson());
+            builder.Entity<ScanHistory>().OwnsMany(s => s.WeeklyTreatments, w => w.ToJson());
         }
     }
 }

@@ -1,0 +1,45 @@
+﻿using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http;
+
+namespace SkincareAdvisor.Application.DTOs
+{
+        // What Flutter sends to C#
+        public record ScanRequest(IFormFile image);
+
+        // The Massive Combined JSON Python sends back to C#
+        public record AiScanResponse(
+            [property: JsonPropertyName("diagnostics")] DiagnosticsDto Diagnostics,
+            [property: JsonPropertyName("routine_class")] string RoutineClass,
+            [property: JsonPropertyName("confidence")] double Confidence,
+            [property: JsonPropertyName("regimen_schedule")] RegimenScheduleDto RegimenSchedule
+        );
+
+        // --- BRAIN 1: CNN Outputs ---
+        public record DiagnosticsDto(
+            [property: JsonPropertyName("acne")] double Acne,
+            [property: JsonPropertyName("dark_spots")] double DarkSpots,
+            [property: JsonPropertyName("wrinkles")] double Wrinkles,
+            [property: JsonPropertyName("redness")] double Redness,
+            [property: JsonPropertyName("dark_circles")] double DarkCircles,
+            [property: JsonPropertyName("gender")] string Gender
+        );
+
+        // --- BRAIN 2: Random Forest Outputs ---
+        public record RegimenScheduleDto(
+            [property: JsonPropertyName("daily_am")] List<RoutineStepDto> DailyAm,
+            [property: JsonPropertyName("daily_pm")] List<RoutineStepDto> DailyPm,
+            [property: JsonPropertyName("weekly_treatments")] List<WeeklyTreatmentDto> WeeklyTreatments
+        );
+
+        public record RoutineStepDto(
+            [property: JsonPropertyName("step")] int Step,
+            [property: JsonPropertyName("product")] string Product,
+            [property: JsonPropertyName("purpose")] string Purpose
+        );
+
+        public record WeeklyTreatmentDto(
+            [property: JsonPropertyName("product")] string Product,
+            [property: JsonPropertyName("frequency")] string Frequency,
+            [property: JsonPropertyName("instructions")] string Instructions
+        );
+}

@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SkincareAdvisor.Application.Interfaces;
 using SkincareAdvisor.Domain.Entities;
 using SkincareAdvisor.Infrastructure.Persistence;
 using SkincareAdvisor.Infrastructure.Services;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,12 +21,45 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+// 3. Setup JWT Authentication Service (The Missing Link)
+// This pulls the key from your environment variables or appsettings
+var jwtKey = builder.Configuration["JwtSettings:Key"]
+             ?? builder.Configuration["JwtSettings__Key"];
+
+if (string.IsNullOrEmpty(jwtKey))
+{
+    // If this hits, double-check your launchSettings.json for "JwtSettings__Key"
+    throw new Exception("CRITICAL ERROR: JWT Secret Key is missing from configuration.");
+}
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false, // Set to true if you have a specific issuer in appsettings
+        ValidateAudience = false, // Set to true if you have a specific audience in appsettings
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
+});
+
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// 4. Dependency Injection
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// This handles the HttpClient pooling automatically!
+builder.Services.AddHttpClient<IScanService, ScanService>();
 
 var app = builder.Build();
 
@@ -36,9 +72,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// 3. Add Authentication Middleware (Crucial for later!)
-app.UseAuthentication();
-app.UseAuthorization();
+// 5. Middleware Order (CRITICAL)
+app.UseRouting();
+
+// Authentication MUST come before Authorization
+app.UseAuthentication(); // Checks the JWT token
+app.UseAuthorization();  // Decides if the user can access the endpoint
 
 app.MapControllers();
 

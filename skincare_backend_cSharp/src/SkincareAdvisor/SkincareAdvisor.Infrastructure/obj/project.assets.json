@@ -1654,7 +1654,10 @@
         },
         "runtime": {
           "bin/placeholder/SkincareAdvisor.Application.dll": {}
-        }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       },
       "SkincareAdvisor.Domain/1.0.0": {
         "type": "project",

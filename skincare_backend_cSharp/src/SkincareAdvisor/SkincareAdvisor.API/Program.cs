@@ -21,7 +21,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-// 3. Setup JWT Authentication Service (The Missing Link)
+// 3. Setup JWT Authentication Service 
 // This pulls the key from your environment variables or appsettings
 var jwtKey = builder.Configuration["JwtSettings:Key"]
              ?? builder.Configuration["JwtSettings__Key"];

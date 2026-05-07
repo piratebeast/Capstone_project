@@ -46,5 +46,15 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SkincareAdvisor.API.Controllers.ScanController",
+    "Method": "GetLatestRoutine",
+    "RelativePath": "api/Scan/routine",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
   }
 ]

@@ -98,6 +98,18 @@
           }
         }
       }
+    },
+    "/api/Scan/routine": {
+      "get": {
+        "tags": [
+          "Scan"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {

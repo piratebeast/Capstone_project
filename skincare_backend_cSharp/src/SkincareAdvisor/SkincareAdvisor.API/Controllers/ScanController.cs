@@ -84,7 +84,12 @@ namespace SkincareAdvisor.API.Controllers
                 return Ok(new
                 {
                     Message = "Scan complete and saved successfully!",
-                    Data = aiResult
+                    ScanId = scanHistory.Id, // <-- CRITICAL: The frontend needs this ID
+                    Data = new
+                    {
+                        Diagnostics = aiResult.Diagnostics,
+                        Confidence = aiResult.Confidence
+                    }
                 });
             }
             catch (Exception ex)
@@ -94,5 +99,36 @@ namespace SkincareAdvisor.API.Controllers
             }
         }
 
+        [HttpGet("routine")] // Notice the {scanId} is gone!
+        public async Task<IActionResult> GetLatestRoutine()
+        {
+            // 1. Get the logged-in user's ID
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // 2. Find the LATEST scan for this specific user
+            // We use OrderByDescending on the CreatedAt date and grab the first one
+            var latestScan = await _context.ScanHistories
+                .Where(s => s.UserId == userId)
+                .OrderByDescending(s => s.ScanDate) // Assuming you have a CreatedAt datetime column!
+                .FirstOrDefaultAsync();
+
+            if (latestScan == null)
+            {
+                return NotFound("No routine found. Please take a scan first!");
+            }
+
+            // 3. Return the routine
+            return Ok(new
+            {
+                ScanDate = latestScan.ScanDate, // Helpful for the frontend to know when this was taken
+                RoutineClass = latestScan.RoutineClass,
+                RegimenSchedule = new
+                {
+                    DailyAm = latestScan.DailyAm,
+                    DailyPm = latestScan.DailyPm,
+                    WeeklyTreatments = latestScan.WeeklyTreatments
+                }
+            });
+        }
     }
 }

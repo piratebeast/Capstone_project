@@ -99,10 +99,21 @@
         }
       }
     },
-    "/api/Scan/routine": {
+    "/api/Scan/routine/{scanId}": {
       "get": {
         "tags": [
           "Scan"
+        ],
+        "parameters": [
+          {
+            "name": "scanId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ],
         "responses": {
           "200": {

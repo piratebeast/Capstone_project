@@ -99,34 +99,30 @@ namespace SkincareAdvisor.API.Controllers
             }
         }
 
-        [HttpGet("routine")] // Notice the {scanId} is gone!
-        public async Task<IActionResult> GetLatestRoutine()
+        [HttpGet("routine/{scanId}")] // URL will be: api/Scan/routine/00d73612...
+        public async Task<IActionResult> GetSpecificRoutine(Guid scanId)
         {
-            // 1. Get the logged-in user's ID
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // 2. Find the LATEST scan for this specific user
-            // We use OrderByDescending on the CreatedAt date and grab the first one
-            var latestScan = await _context.ScanHistories
-                .Where(s => s.UserId == userId)
-                .OrderByDescending(s => s.ScanDate) // Assuming you have a CreatedAt datetime column!
-                .FirstOrDefaultAsync();
+            // Find the EXACT scan by ID and ensure it belongs to this user
+            var scan = await _context.ScanHistories
+                .FirstOrDefaultAsync(s => s.Id == scanId && s.UserId == userId);
 
-            if (latestScan == null)
+            if (scan == null)
             {
-                return NotFound("No routine found. Please take a scan first!");
+                return NotFound("That specific routine could not be found.");
             }
 
-            // 3. Return the routine
             return Ok(new
             {
-                ScanDate = latestScan.ScanDate, // Helpful for the frontend to know when this was taken
-                RoutineClass = latestScan.RoutineClass,
+                ScanDate = scan.ScanDate,
+                RoutineClass = scan.RoutineClass,
+                Confidence = scan.Confidence,
                 RegimenSchedule = new
                 {
-                    DailyAm = latestScan.DailyAm,
-                    DailyPm = latestScan.DailyPm,
-                    WeeklyTreatments = latestScan.WeeklyTreatments
+                    DailyAm = scan.DailyAm,
+                    DailyPm = scan.DailyPm,
+                    WeeklyTreatments = scan.WeeklyTreatments
                 }
             });
         }

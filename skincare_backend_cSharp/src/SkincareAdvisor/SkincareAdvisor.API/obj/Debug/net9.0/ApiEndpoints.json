@@ -49,12 +49,18 @@
   },
   {
     "ContainingType": "SkincareAdvisor.API.Controllers.ScanController",
-    "Method": "GetLatestRoutine",
-    "RelativePath": "api/Scan/routine",
+    "Method": "GetSpecificRoutine",
+    "RelativePath": "api/Scan/routine/{scanId}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "scanId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   }
 ]

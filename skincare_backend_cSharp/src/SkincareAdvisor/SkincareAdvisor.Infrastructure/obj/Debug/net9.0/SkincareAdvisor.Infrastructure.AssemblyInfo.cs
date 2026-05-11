@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SkincareAdvisor.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7c40d285a211bd62df97de8de0cf238391d11e23")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0014ef07fded6639b728c57c45d2905b9ff0e843")]
 [assembly: System.Reflection.AssemblyProductAttribute("SkincareAdvisor.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SkincareAdvisor.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,0 +1,15 @@
+<div class="flex h-screen w-full bg-[#F4F7FB] overflow-hidden">
+  <!-- Fixed Sidebar -->
+  <app-sidebar class="w-64 flex-shrink-0 border-r border-gray-200 bg-white h-full"></app-sidebar>
+
+  <!-- Main Content Area -->
+  <div class="flex flex-col flex-1 h-full overflow-hidden">
+    <!-- Top Navigation -->
+    <app-top-nav class="h-16 flex-shrink-0 border-b border-gray-200 bg-white"></app-top-nav>
+
+    <!-- Scrollable Router Outlet -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

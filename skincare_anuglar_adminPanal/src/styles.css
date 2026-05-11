@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Clinical Dashboard Global Variables */
+@layer base {
+  body {
+    @apply bg-[#F4F7FB] text-gray-800 font-sans;
+  }
+}

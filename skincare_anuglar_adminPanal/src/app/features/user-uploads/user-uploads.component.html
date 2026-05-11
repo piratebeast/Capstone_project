@@ -1,0 +1,119 @@
+<div class="max-w-[1000px] space-y-6">
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Live Diagnostic Feed</h1>
+    <p class="text-gray-500 mt-1 text-sm">Real-time model inferences on user-submitted imagery.</p>
+  </div>
+
+  <!-- Main Card Interface -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    
+    <!-- Card Header -->
+    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full overflow-hidden border border-gray-200 shadow-sm">
+          <img [src]="patient.imageUrl" alt="Patient" class="w-full h-full object-cover">
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-gray-900">{{ patient.name }}</h2>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-xs text-gray-500 font-medium">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3 inline-block mr-0.5 -mt-0.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+              {{ patient.timestamp }}
+            </span>
+            <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+            <span class="px-2 py-0.5 bg-[#E6F0FD] text-[#004B8F] rounded text-[10px] font-bold uppercase tracking-widest">
+              {{ patient.source }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <button class="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
+        <ng-icon name="heroEllipsisHorizontal" class="text-xl"></ng-icon>
+      </button>
+    </div>
+
+    <!-- Card Body -->
+    <div class="grid grid-cols-[1.2fr_1fr] p-6 gap-8">
+      
+      <!-- Left Side (Image Viewer) -->
+      <div class="flex flex-col gap-4">
+        <div class="relative rounded-lg overflow-hidden border border-gray-200 shadow-sm group bg-gray-100">
+          <img [src]="patient.imageUrl" alt="High-resolution facial scan" class="w-full object-cover aspect-[4/3]">
+          
+          <!-- Mock UI Overlays (Bounding Boxes) -->
+          <div class="absolute top-[40%] left-[35%] w-16 h-16 rounded-full border-[1.5px] border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)] bg-red-500/10"></div>
+          <div class="absolute bottom-[20%] right-[30%] w-12 h-12 rounded-full border-[1.5px] border-[#004B8F] shadow-[0_0_10px_rgba(0,75,143,0.2)] bg-[#004B8F]/10"></div>
+        </div>
+
+        <div class="flex gap-4">
+          <button class="flex-1 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 transition-colors flex items-center justify-center gap-2 tracking-wide uppercase">
+            <ng-icon name="heroEye"></ng-icon> View Original
+          </button>
+          <button class="flex-1 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 transition-colors flex items-center justify-center gap-2 tracking-wide uppercase">
+            <ng-icon name="heroMap"></ng-icon> Toggle Heatmap
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Side (Analysis) -->
+      <div class="flex flex-col pt-2">
+        
+        <div class="mb-8">
+          <h3 class="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-6">
+            <ng-icon name="heroChartBar" class="text-[#004B8F] text-sm"></ng-icon>
+            Diagnostic Confidence Scores
+          </h3>
+
+          <div class="space-y-6">
+            <!-- Metric 1 -->
+            <div>
+              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-2">
+                <span>Acne / Blemishes</span>
+                <span class="text-gray-500 font-medium">{{ metrics.acneConfidence }}%</span>
+              </div>
+              <div class="w-full bg-gray-100 rounded-full h-2">
+                <div class="bg-[#B91C1C] h-2 rounded-full" [style.width.%]="metrics.acneConfidence"></div>
+              </div>
+            </div>
+
+            <!-- Metric 2 -->
+            <div>
+              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-2">
+                <span>Redness / Erythema</span>
+                <span class="text-gray-500 font-medium">{{ metrics.rednessConfidence }}%</span>
+              </div>
+              <div class="w-full bg-gray-100 rounded-full h-2">
+                <div class="bg-[#0F766E] h-2 rounded-full" [style.width.%]="metrics.rednessConfidence"></div>
+              </div>
+            </div>
+
+            <!-- Metric 3 -->
+            <div>
+              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-2">
+                <span>Dark Spots / Hyperpigmentation</span>
+                <span class="text-gray-500 font-medium">{{ metrics.darkSpotsConfidence }}%</span>
+              </div>
+              <div class="w-full bg-gray-100 rounded-full h-2">
+                <div class="bg-[#004B8F] h-2 rounded-full" [style.width.%]="metrics.darkSpotsConfidence"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-auto pb-4">
+           <div class="bg-[#F8FAFC] border border-gray-200 rounded-xl p-5 relative">
+             <div class="absolute -top-[11px] left-4 bg-white px-2.5 py-0.5 border border-gray-200 rounded-full flex items-center gap-1.5 shadow-sm">
+               <ng-icon name="heroSparkles" class="text-[#004B8F] text-[10px]"></ng-icon>
+               <span class="text-[10px] font-bold text-[#004B8F] uppercase tracking-widest">Model Critique</span>
+             </div>
+             <p class="text-sm text-gray-700 leading-relaxed pt-1">
+               Face detected with MediaPipe; Feature extraction successful. High confidence in lesion classification due to optimal lighting and focus. Region proposals align with known acne clustering patterns.
+             </p>
+           </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

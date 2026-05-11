@@ -322,7 +322,7 @@ def analyze_face_pipeline(image_bytes: bytes, user_age: int = 25) -> dict:
     redness_val      = round(float(raw_redness[0] * 100), 2)
     dark_circles_val = round(float(raw_dark_circles[0] * 100), 2)
     
-    # Handle binary classification mapping for Gender (Assuming 0=Male, 1=Female)
+    # Handle binary classification mapping for gender Female is 0 and Male is 1
     gender_num = 0 if raw_gender[0] < 0.5 else 1 
     gender_val = "Female" if gender_num == 0 else "Male"
 

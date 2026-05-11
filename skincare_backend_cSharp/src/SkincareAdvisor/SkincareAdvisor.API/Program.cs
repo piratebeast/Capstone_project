@@ -1,12 +1,13 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SkincareAdvisor.Application.Interfaces;
 using SkincareAdvisor.Domain.Entities;
 using SkincareAdvisor.Infrastructure.Persistence;
 using SkincareAdvisor.Infrastructure.Services;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,13 +56,26 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 4. Dependency Injection
+//4. Dependency Injection
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // This handles the HttpClient pooling automatically!
 builder.Services.AddHttpClient<IScanService, ScanService>();
 
+//Api Rates Limiting (Optional, but recommended for production)
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("api-policy", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 10; // Allow 10 scans per minute
+        opt.QueueLimit = 2;   // Queue 2 extra if they are just slightly over
+    });
+});
+
+
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -74,6 +88,9 @@ app.UseHttpsRedirection();
 
 // 5. Middleware Order (CRITICAL)
 app.UseRouting();
+
+// Apply the rate limiter BEFORE authentication and authorization to prevent abuse of those systems
+app.UseRateLimiter();
 
 // Authentication MUST come before Authorization
 app.UseAuthentication(); // Checks the JWT token

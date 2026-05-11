@@ -1,0 +1,183 @@
+<div class="max-w-[1400px] mx-auto space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Model Performance</h1>
+      <p class="text-gray-500 mt-1 text-sm">Real-time metrics for diagnostic stages 1-3.</p>
+    </div>
+    <div
+      class="flex items-center border border-gray-200 rounded-lg bg-white overflow-hidden text-xs font-semibold text-gray-600 shadow-sm">
+      <button class="px-4 py-2 hover:bg-gray-50 border-r border-gray-200">24H</button>
+      <button class="px-4 py-2 bg-[#E6F0FD] text-[#004B8F] border-r border-gray-200">7D</button>
+      <button class="px-4 py-2 hover:bg-gray-50 border-r border-gray-200">30D</button>
+      <button class="px-4 py-2 hover:bg-gray-50">90D</button>
+    </div>
+  </div>
+
+  <!-- Main Dashboard -->
+  <div class="grid grid-cols-[2fr_1fr] gap-6">
+    <!-- Left: Model Drift Detection -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col relative overflow-hidden">
+      <!-- Horizontal threshold line visual overlay -->
+      <div
+        class="absolute left-10 right-[150px] top-[145px] border-t-2 border-dashed border-red-300 pointer-events-none z-10">
+      </div>
+
+      <div class="flex justify-between items-start mb-2">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <ng-icon name="heroArrowTrendingUp" class="text-[#004B8F] text-xl"></ng-icon>
+            Model Drift Detection
+          </h2>
+          <p class="text-sm text-gray-500 mt-1">Stage 2 & 3 score variations over 30 days.</p>
+        </div>
+        <div
+          class="px-3 py-1.5 bg-red-50 text-red-700 rounded-full border border-red-200 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+          <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+          Alert: Concept Drift > 0.15
+        </div>
+      </div>
+
+      <div class="flex-1 min-h-[320px] mt-4 relative z-0">
+        <canvas baseChart [data]="lineChartData" [options]="lineChartOptions" type="line"></canvas>
+      </div>
+    </div>
+
+    <!-- Right: Inference Quality -->
+    <div class="bg-[#004B8F] rounded-xl shadow-md p-6 flex flex-col text-white relative overflow-hidden">
+      <!-- Background Graphic -->
+      <ng-icon name="heroCog" class="absolute -bottom-8 -right-8 text-9xl text-white/10"></ng-icon>
+
+      <h2 class="text-2xl font-bold mb-1 relative z-10">Inference Quality</h2>
+      <p class="text-blue-200 text-sm mb-8 relative z-10 font-medium">Random Forest Engine</p>
+
+      <div class="space-y-6 flex-1 relative z-10">
+        <!-- Metric -->
+        <div>
+          <div class="flex justify-between text-xs font-bold uppercase tracking-wider mb-2 text-blue-50">
+            <span>Precision</span>
+            <span class="text-white">94.2%</span>
+          </div>
+          <div class="w-full bg-blue-900 rounded-full h-1.5">
+            <div class="bg-white h-1.5 rounded-full" style="width: 94.2%"></div>
+          </div>
+        </div>
+
+        <!-- Metric -->
+        <div>
+          <div class="flex justify-between text-xs font-bold uppercase tracking-wider mb-2 text-blue-50">
+            <span>Recall</span>
+            <span class="text-white">88.7%</span>
+          </div>
+          <div class="w-full bg-blue-900 rounded-full h-1.5">
+            <div class="bg-white h-1.5 rounded-full" style="width: 88.7%"></div>
+          </div>
+        </div>
+
+        <!-- Metric -->
+        <div>
+          <div class="flex justify-between text-xs font-bold uppercase tracking-wider mb-2 text-blue-50">
+            <span>F1-Score</span>
+            <span class="text-white">91.3%</span>
+          </div>
+          <div class="w-full bg-blue-900 rounded-full h-1.5">
+            <div class="bg-white h-1.5 rounded-full" style="width: 91.3%"></div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        class="mt-8 w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white font-semibold transition-colors flex justify-center items-center gap-2 relative z-10 shadow-sm backdrop-blur-sm">
+        <ng-icon name="heroAdjustmentsHorizontal" class="text-xl"></ng-icon>
+        Retrain Model
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom Section -->
+  <div class="grid grid-cols-[1fr_2fr] gap-6 pb-8">
+    <!-- MediaPipe Validation -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
+      <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-1">
+        <ng-icon name="heroDocumentCheck" class="text-gray-500 text-xl"></ng-icon>
+        MediaPipe Validation
+      </h2>
+      <p class="text-sm text-gray-500 mb-auto">Stage 1: Image stream acceptance ratio.</p>
+
+      <div class="mt-16 mb-6">
+        <div class="flex justify-between items-end mb-2 text-sm font-bold">
+          <span class="text-[#004B8F]">85%</span>
+          <span class="text-red-500">15%</span>
+        </div>
+        <div class="w-full h-1.5 rounded-full overflow-hidden flex">
+          <div class="bg-[#004B8F] h-full" style="width: 85%"></div>
+          <div class="bg-red-500 h-full" style="width: 15%"></div>
+        </div>
+        <div class="flex justify-between mt-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+          <span>Validated</span>
+          <span>Failed</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metric Sensitivity -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-6">
+        <ng-icon name="heroAdjustmentsHorizontal" class="text-teal-600 text-xl"></ng-icon>
+        Metric Sensitivity
+      </h2>
+
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-gray-100">
+            <th class="pb-3 font-semibold text-gray-400 uppercase tracking-widest text-[11px]">Diagnostic Metric</th>
+            <th class="pb-3 font-semibold text-gray-400 uppercase tracking-widest text-[11px]">Confidence</th>
+            <th class="pb-3 font-semibold text-gray-400 uppercase tracking-widest text-[11px]">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50 text-gray-700 font-medium">
+          <tr>
+            <td class="py-4">Acne Detection</td>
+            <td class="py-4 font-semibold text-gray-900">0.92</td>
+            <td class="py-4">
+              <span
+                class="px-2.5 py-1 bg-green-50 text-green-700 rounded text-[11px] font-bold border border-green-200">Optimal</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="py-4">Redness/Erythema</td>
+            <td class="py-4 font-semibold text-gray-900">0.88</td>
+            <td class="py-4">
+              <span
+                class="px-2.5 py-1 bg-green-50 text-green-700 rounded text-[11px] font-bold border border-green-200">Optimal</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="py-4">Dark Spots/Pigmentation</td>
+            <td class="py-4 font-semibold text-gray-900">0.74</td>
+            <td class="py-4">
+              <span class="px-2.5 py-1 bg-red-50 text-red-700 rounded text-[11px] font-bold border border-red-200">Needs
+                Review</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="py-4">Wrinkles/Fine Lines</td>
+            <td class="py-4 font-semibold text-gray-900">0.85</td>
+            <td class="py-4">
+              <span
+                class="px-2.5 py-1 bg-[#E6F0FD] text-[#004B8F] rounded text-[11px] font-bold border border-[#bfdcfc]">Acceptable</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="py-4">Dark Circles</td>
+            <td class="py-4 font-semibold text-gray-900">0.81</td>
+            <td class="py-4">
+              <span
+                class="px-2.5 py-1 bg-[#E6F0FD] text-[#004B8F] rounded text-[11px] font-bold border border-[#bfdcfc]">Acceptable</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

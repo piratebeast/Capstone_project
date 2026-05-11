@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using SkincareAdvisor.Application.DTOs;
 using SkincareAdvisor.Application.Interfaces;
@@ -12,7 +13,9 @@ namespace SkincareAdvisor.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Ensure that only authenticated users can access this controller
+    [Authorize]// Ensure that only authenticated users can access this controller
+    [EnableRateLimiting("api-policy")] // Apply the rate limiting policy defined in Program.cs
+
     public class ScanController : ControllerBase
     {
         private readonly IScanService _scanService;
@@ -92,6 +95,16 @@ namespace SkincareAdvisor.API.Controllers
                     }
                 });
             }
+            //catch for specific exceptions that might be thrown by the Python service,
+            //such as when no face is detected or multiple faces are detected.
+            //This allows us to return a clean error message to the frontend instead of a generic 500 error.
+            catch (ArgumentException ex)
+            {
+                // This catches the MediaPipe "No Face" or "Multiple Faces" errors 
+                // and sends a clean 400 error to Flutter so it can show a warning dialog.
+                return BadRequest(new { Error = "Invalid Image", Message = ex.Message });
+            }
+            // Catch any other unexpected exceptions that might occur during the analysis process
             catch (Exception ex)
             {
                 // If Python is offline or crashes, catch the error gracefully

@@ -76,7 +76,8 @@ namespace SkincareAdvisor.Infrastructure.Services
                 Email = request.Email,
                 FullName = request.FullName,
                 Gender = request.Gender,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                DateOfBirth = request.DateOfBirth
             };
 
             // 2. Attempt to create the user

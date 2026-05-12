@@ -1,12 +1,14 @@
-{
+﻿{
     "ConnectionStrings": {
         "DefaultConnection": "Server=DESKTOP-94E2O8D\\SQLEXPRESS;Database=SkincareAdvisorDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
     },
     "JwtSettings": {
-        "Key": "ThisIsATemporarySecretKeyForMigrationsToPass123456!",
         "Issuer": "SkincareAdvisorAPI",
         "Audience": "SkincareAdvisorFlutterApp",
         "DurationInMinutes": 60
+    },
+    "Jwt": {
+        "Secret": "ThisIsATemporarySecretKeyJustForMigrationsToPass123!"
     },
     "Logging": {
         "LogLevel": {

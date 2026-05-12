@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import mediapipe as mp
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 import uvicorn
 
 # Import your new master pipeline from the adjacent predictor.py file
@@ -14,8 +14,11 @@ mp_face_detection = mp.solutions.face_detection
 # model_selection=0 is optimized for close-range faces (like selfies within 2 meters)
 face_detector = mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.5)
 
-@app.post("/analyze") # Changed to /analyze to match your C# HttpClient!
-async def analyze_face(file: UploadFile = File(...)):
+@app.post("/analyze") 
+async def analyze_face(
+    file: UploadFile = File(...),
+    user_age: int = Form(25) # <-- NEW: Accepts age from C#, defaults to 25 if missing
+):
     try:
         # 1. Read the raw bytes sent from your C# HttpClient
         image_bytes = await file.read()
@@ -40,7 +43,7 @@ async def analyze_face(file: UploadFile = File(...)):
         if not results.detections:
             raise HTTPException(
                 status_code=400, 
-                detail="NO_FACE_DETECTED" # C# is specifically looking for this string!
+                detail="NO_FACE_DETECTED" 
             )
             
         if len(results.detections) > 1:
@@ -51,9 +54,8 @@ async def analyze_face(file: UploadFile = File(...)):
         # ==========================================
 
         # 3. PREDICTION PHASE
-        # If it passes validation, send the exact same bytes to your pipeline
-        # Note: You can pass age from your C# app later. Defaulting to 25 here.
-        final_payload = analyze_face_pipeline(image_bytes, user_age=25)
+        # Now passing the REAL age that was calculated by your C# backend!
+        final_payload = analyze_face_pipeline(image_bytes, user_age=user_age)
         
         return final_payload
 

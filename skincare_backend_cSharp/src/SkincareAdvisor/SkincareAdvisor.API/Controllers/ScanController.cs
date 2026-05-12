@@ -37,11 +37,31 @@ namespace SkincareAdvisor.API.Controllers
 
             try
             {
-                // 2. Call the Python FastAPI Server (The Brains)
-                AiScanResponse aiResult = await _scanService.AnalyzeImageAsync(request.image);
+                // 2. Extract the logged-in User's ID directly from their JWT Token
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                // 3. Extract the logged-in User's ID directly from their JWT Token
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized("User is not authenticated.");
+
+                // --- NEW LOGIC: Fetch User and Calculate Age ---
+                var user = await _context.Users.FindAsync(userId);
+                int calculatedAge = 25; // Safe default
+
+                if (user != null && user.DateOfBirth.HasValue)
+                {
+                    var today = DateTime.Today;
+                    var dob = user.DateOfBirth.Value;
+                    calculatedAge = today.Year - dob.Year;
+
+                    if (dob.Date > today.AddYears(-calculatedAge))
+                    {
+                        calculatedAge--;
+                    }
+                }
+                // -----------------------------------------------
+
+                // 3. Call the Python FastAPI Server (Now passing BOTH image and age!)
+                AiScanResponse aiResult = await _scanService.AnalyzeImageAsync(request.image, calculatedAge);
 
                 // 4. Map the Python DTO into our Database Entity
                 var scanHistory = new ScanHistory
@@ -95,19 +115,14 @@ namespace SkincareAdvisor.API.Controllers
                     }
                 });
             }
-            //catch for specific exceptions that might be thrown by the Python service,
-            //such as when no face is detected or multiple faces are detected.
-            //This allows us to return a clean error message to the frontend instead of a generic 500 error.
+            // Catch for specific exceptions thrown by the Python service (MediaPipe checks)
             catch (ArgumentException ex)
             {
-                // This catches the MediaPipe "No Face" or "Multiple Faces" errors 
-                // and sends a clean 400 error to Flutter so it can show a warning dialog.
                 return BadRequest(new { Error = "Invalid Image", Message = ex.Message });
             }
-            // Catch any other unexpected exceptions that might occur during the analysis process
+            // Catch any other unexpected exceptions (Python offline, DB crashes, etc.)
             catch (Exception ex)
             {
-                // If Python is offline or crashes, catch the error gracefully
                 return StatusCode(500, $"An error occurred during analysis: {ex.Message}");
             }
         }

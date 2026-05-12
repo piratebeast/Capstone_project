@@ -157,6 +157,10 @@
           "gender": {
             "type": "string",
             "nullable": true
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false

@@ -22,20 +22,26 @@ namespace SkincareAdvisor.Infrastructure.Services
             _httpClient.BaseAddress = new Uri("http://localhost:8000/");
         }
 
-        public async Task<AiScanResponse> AnalyzeImageAsync(IFormFile image)
+        public async Task<AiScanResponse> AnalyzeImageAsync(IFormFile image, int userAge) // <-- 1. Add parameter
         {
             using var content = new MultipartFormDataContent();
+
+            // Pack the image file
             using var stream = image.OpenReadStream();
             content.Add(new StreamContent(stream), "file", image.FileName);
 
+            // --- NEW LOGIC: Pack the user's age ---
+            content.Add(new StringContent(userAge.ToString()), "user_age");
+            // --------------------------------------
+
+            // Send both the image and the age to Python
             var response = await _httpClient.PostAsync("http://localhost:8000/analyze", content);
 
-            // --- NEW LOGIC: Check if Python rejected the image! ---
+            // --- Check if Python rejected the image! ---
             if (!response.IsSuccessStatusCode)
             {
                 var errorJson = await response.Content.ReadAsStringAsync();
 
-                // If Python didn't find a face, throw a specific error
                 if (response.StatusCode == System.Net.HttpStatusCode.BadRequest && errorJson.Contains("NO_FACE_DETECTED"))
                 {
                     throw new ArgumentException("No human face detected in the image.");
@@ -45,10 +51,8 @@ namespace SkincareAdvisor.Infrastructure.Services
                     throw new ArgumentException("Multiple faces detected. Please upload a solo selfie.");
                 }
 
-                // Generic fallback for any other Python crashes
                 throw new Exception("The AI Service encountered an error.");
             }
-            // ------------------------------------------------------
 
             // If successful (200 OK), deserialize it normally
             var result = await response.Content.ReadFromJsonAsync<AiScanResponse>();

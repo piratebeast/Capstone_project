@@ -6,22 +6,22 @@ using System.Threading.Tasks;
 
 namespace SkincareAdvisor.Application.DTOs
 {
+    public record RegisterRequest(
+        string Email,
+        string Password,
+        string FullName,
+        string Gender,
+        DateTime DateOfBirth 
+    );
 
-        public record RegisterRequest(
-            string Email,
-            string Password,
-            string FullName,
-            string Gender
-            );
+    public record LoginRequest(
+        string Email,
+        string Password
+    );
 
-        public record LoginRequest(
-            string Email,
-            string Password
-            );
-
-        public record AuthResponse(
-            bool Success,
-            string token,
-            string Message
-            );
+    public record AuthResponse(
+        bool Success,
+        string token,
+        string Message
+    );
 }

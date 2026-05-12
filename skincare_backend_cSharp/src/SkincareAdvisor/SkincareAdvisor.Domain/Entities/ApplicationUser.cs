@@ -15,5 +15,6 @@ namespace SkincareAdvisor.Domain.Entities
         public string? AvatarUrl { get; set; } = string.Empty;
         public string? Gender { get; set; } = string.Empty;
         public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? DateOfBirth { get; set; }
     }
 }

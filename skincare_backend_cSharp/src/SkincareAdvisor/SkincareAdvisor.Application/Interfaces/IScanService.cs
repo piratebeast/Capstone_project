@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using SkincareAdvisor.Application.DTOs;
+using System.Threading.Tasks;
 
 namespace SkincareAdvisor.Application.Interfaces
 {
     public interface IScanService
     {
-        // Takes the image, talks to Python, returns the massive JSON DTO
-        Task<AiScanResponse> AnalyzeImageAsync(IFormFile image);
+        // Add "int userAge" here
+        Task<AiScanResponse> AnalyzeImageAsync(IFormFile image, int userAge);
     }
 }

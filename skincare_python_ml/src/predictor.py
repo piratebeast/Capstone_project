@@ -291,7 +291,7 @@ def compute_confidence(rf_model, rf_input: np.ndarray, predictions: np.ndarray) 
 # ---------------------------------------------------------------------------
 # 5. MASTER PIPELINE
 # ---------------------------------------------------------------------------
-def analyze_face_pipeline(image_bytes: bytes, user_age: int = 25) -> dict:
+def analyze_face_pipeline(image_bytes: bytes, user_age) -> dict:
     """
     Orchestrates Brain 1 → Brain 2 → Safety Adapter.
     Returns the JSON contract consumed by the C# / .NET 8.0 backend.

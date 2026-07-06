@@ -38,19 +38,100 @@
       
       <!-- Left Side (Image Viewer) -->
       <div class="flex flex-col gap-4">
-        <div class="relative rounded-lg overflow-hidden border border-gray-200 shadow-sm group bg-gray-100">
-          <img [src]="patient.imageUrl" alt="High-resolution facial scan" class="w-full object-cover aspect-[4/3]">
+        <!-- Image Container -->
+        <div class="relative rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-gray-100 aspect-[4/3]">
+          <img [src]="patient.imageUrl" alt="High-resolution facial scan" class="w-full h-full object-cover">
           
           <!-- Mock UI Overlays (Bounding Boxes) -->
-          <div class="absolute top-[40%] left-[35%] w-16 h-16 rounded-full border-[1.5px] border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)] bg-red-500/10"></div>
-          <div class="absolute bottom-[20%] right-[30%] w-12 h-12 rounded-full border-[1.5px] border-[#004B8F] shadow-[0_0_10px_rgba(0,75,143,0.2)] bg-[#004B8F]/10"></div>
+          @if (showDetections) {
+            <div class="absolute top-[40%] left-[35%] w-16 h-16 rounded-full border-[1.5px] border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)] bg-red-500/10"></div>
+            <div class="absolute bottom-[20%] right-[30%] w-12 h-12 rounded-full border-[1.5px] border-[#004B8F] shadow-[0_0_10px_rgba(0,75,143,0.2)] bg-[#004B8F]/10"></div>
+          }
+
+          <!-- SVG Heatmap Overlay -->
+          <svg viewBox="0 0 400 300" class="absolute inset-0 w-full h-full pointer-events-none">
+            <defs>
+              <!-- Blur filters -->
+              <filter id="heat-blur-sm" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="7" />
+              </filter>
+              <filter id="heat-blur-md" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="15" />
+              </filter>
+              <filter id="heat-blur-lg" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="25" />
+              </filter>
+            </defs>
+
+            <!-- 1. Acne Heatmap (Red) -->
+            @if (layers.acne.active) {
+              <g class="transition-opacity duration-300">
+                <circle cx="150" cy="110" r="14" fill="#EF4444" fill-opacity="0.75" filter="url(#heat-blur-sm)" />
+                <circle cx="165" cy="125" r="8" fill="#EF4444" fill-opacity="0.85" filter="url(#heat-blur-sm)" />
+                <circle cx="230" cy="140" r="18" fill="#EF4444" fill-opacity="0.7" filter="url(#heat-blur-sm)" />
+                <circle cx="190" cy="80" r="10" fill="#EF4444" fill-opacity="0.8" filter="url(#heat-blur-sm)" />
+                <circle cx="210" cy="180" r="12" fill="#EF4444" fill-opacity="0.75" filter="url(#heat-blur-sm)" />
+              </g>
+            }
+
+            <!-- 2. Dark Spots Heatmap (Amber/Orange) -->
+            @if (layers.darkSpots.active) {
+              <g class="transition-opacity duration-300">
+                <circle cx="130" cy="150" r="12" fill="#F59E0B" fill-opacity="0.75" filter="url(#heat-blur-sm)" />
+                <circle cx="260" cy="130" r="15" fill="#F59E0B" fill-opacity="0.7" filter="url(#heat-blur-sm)" />
+                <circle cx="245" cy="110" r="8" fill="#F59E0B" fill-opacity="0.85" filter="url(#heat-blur-sm)" />
+              </g>
+            }
+
+            <!-- 3. Wrinkles Heatmap (Emerald Green) -->
+            @if (layers.wrinkles.active) {
+              <g class="transition-opacity duration-300">
+                <!-- Forehead wrinkles -->
+                <path d="M 140,75 Q 200,70 260,75" stroke="#10B981" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.65" filter="url(#heat-blur-sm)" />
+                <path d="M 150,65 Q 200,60 250,65" stroke="#10B981" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.55" filter="url(#heat-blur-sm)" />
+                <!-- Crow's feet -->
+                <path d="M 120,120 Q 110,122 100,120 M 120,120 Q 110,126 102,128" stroke="#10B981" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.8" filter="url(#heat-blur-sm)" />
+                <path d="M 280,120 Q 290,122 300,120 M 280,120 Q 290,126 298,128" stroke="#10B981" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.8" filter="url(#heat-blur-sm)" />
+              </g>
+            }
+
+            <!-- 4. Redness Heatmap (Coral Pink) -->
+            @if (layers.redness.active) {
+              <g class="transition-opacity duration-300">
+                <!-- Center face redness -->
+                <circle cx="200" cy="145" r="35" fill="#EC4899" fill-opacity="0.55" filter="url(#heat-blur-lg)" />
+                <circle cx="170" cy="150" r="22" fill="#EC4899" fill-opacity="0.5" filter="url(#heat-blur-md)" />
+                <circle cx="230" cy="150" r="22" fill="#EC4899" fill-opacity="0.5" filter="url(#heat-blur-md)" />
+              </g>
+            }
+
+            <!-- 5. Dark Circles Heatmap (Indigo Blue) -->
+            @if (layers.darkCircles.active) {
+              <g class="transition-opacity duration-300">
+                <!-- Under eyes crescent shapes -->
+                <path d="M 140,132 Q 165,145 190,132" stroke="#6366F1" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.8" filter="url(#heat-blur-md)" />
+                <path d="M 210,132 Q 235,145 260,132" stroke="#6366F1" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.8" filter="url(#heat-blur-md)" />
+              </g>
+            }
+          </svg>
         </div>
 
         <div class="flex gap-4">
-          <button class="flex-1 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 transition-colors flex items-center justify-center gap-2 tracking-wide uppercase">
+          <!-- View Original Button -->
+          <button 
+            (click)="showOriginal()"
+            [class]="'flex-1 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 tracking-wide uppercase border ' + 
+                     (!isAnyLayerActive && !showDetections ? 'bg-gray-900 border-gray-900 text-white shadow-md' : 'bg-white hover:bg-gray-50 border-gray-200 text-gray-700 hover:text-gray-900')"
+          >
             <ng-icon name="heroEye"></ng-icon> View Original
           </button>
-          <button class="flex-1 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 transition-colors flex items-center justify-center gap-2 tracking-wide uppercase">
+
+          <!-- Toggle Heatmap Button -->
+          <button 
+            (click)="toggleAllHeatmaps()"
+            [class]="'flex-1 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 tracking-wide uppercase border ' + 
+                     (isAllLayersActive ? 'bg-[#004B8F] border-[#004B8F] text-white shadow-md shadow-blue-500/10' : 'bg-white hover:bg-gray-50 border-gray-200 text-gray-700 hover:text-gray-900')"
+          >
             <ng-icon name="heroMap"></ng-icon> Toggle Heatmap
           </button>
         </div>
@@ -65,37 +146,124 @@
             Diagnostic Confidence Scores
           </h3>
 
-          <div class="space-y-6">
-            <!-- Metric 1 -->
-            <div>
-              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-2">
-                <span>Acne / Blemishes</span>
+          <div class="space-y-5">
+            <!-- Metric 1: Acne -->
+            <div class="group border border-transparent rounded-lg p-2.5 -mx-2.5 hover:bg-gray-50 transition-colors">
+              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-1.5">
+                <span class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#EF4444] shrink-0" [class.animate-pulse]="layers.acne.active"></span>
+                  Acne / Blemishes
+                </span>
                 <span class="text-gray-500 font-medium">{{ metrics.acneConfidence }}%</span>
               </div>
-              <div class="w-full bg-gray-100 rounded-full h-2">
-                <div class="bg-[#B91C1C] h-2 rounded-full" [style.width.%]="metrics.acneConfidence"></div>
+              <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
+                <div class="bg-[#EF4444] h-2 rounded-full transition-all duration-500" [style.width.%]="metrics.acneConfidence"></div>
+              </div>
+              <div class="flex justify-between items-center">
+                <button 
+                  (click)="toggleLayer('acne')"
+                  [class]="'px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all duration-200 flex items-center gap-1.5 border ' + 
+                           (layers.acne.active ? 'bg-red-50 text-red-600 border-red-200 shadow-sm ring-1 ring-red-500/10' : 'bg-gray-50 text-gray-400 hover:text-gray-600 border-gray-200')"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" [style.background-color]="layers.acne.active ? '#EF4444' : '#9CA3AF'"></span>
+                  {{ layers.acne.active ? 'Heatmap Active' : 'Toggle Heatmap' }}
+                </button>
               </div>
             </div>
 
-            <!-- Metric 2 -->
-            <div>
-              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-2">
-                <span>Redness / Erythema</span>
-                <span class="text-gray-500 font-medium">{{ metrics.rednessConfidence }}%</span>
-              </div>
-              <div class="w-full bg-gray-100 rounded-full h-2">
-                <div class="bg-[#0F766E] h-2 rounded-full" [style.width.%]="metrics.rednessConfidence"></div>
-              </div>
-            </div>
-
-            <!-- Metric 3 -->
-            <div>
-              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-2">
-                <span>Dark Spots / Hyperpigmentation</span>
+            <!-- Metric 2: Dark Spots -->
+            <div class="group border border-transparent rounded-lg p-2.5 -mx-2.5 hover:bg-gray-50 transition-colors">
+              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-1.5">
+                <span class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#F59E0B] shrink-0" [class.animate-pulse]="layers.darkSpots.active"></span>
+                  Dark Spots / Hyperpigmentation
+                </span>
                 <span class="text-gray-500 font-medium">{{ metrics.darkSpotsConfidence }}%</span>
               </div>
-              <div class="w-full bg-gray-100 rounded-full h-2">
-                <div class="bg-[#004B8F] h-2 rounded-full" [style.width.%]="metrics.darkSpotsConfidence"></div>
+              <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
+                <div class="bg-[#F59E0B] h-2 rounded-full transition-all duration-500" [style.width.%]="metrics.darkSpotsConfidence"></div>
+              </div>
+              <div class="flex justify-between items-center">
+                <button 
+                  (click)="toggleLayer('darkSpots')"
+                  [class]="'px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all duration-200 flex items-center gap-1.5 border ' + 
+                           (layers.darkSpots.active ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm ring-1 ring-amber-500/10' : 'bg-gray-50 text-gray-400 hover:text-gray-600 border-gray-200')"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" [style.background-color]="layers.darkSpots.active ? '#F59E0B' : '#9CA3AF'"></span>
+                  {{ layers.darkSpots.active ? 'Heatmap Active' : 'Toggle Heatmap' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Metric 3: Wrinkles -->
+            <div class="group border border-transparent rounded-lg p-2.5 -mx-2.5 hover:bg-gray-50 transition-colors">
+              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-1.5">
+                <span class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#10B981] shrink-0" [class.animate-pulse]="layers.wrinkles.active"></span>
+                  Wrinkles / Fine Lines
+                </span>
+                <span class="text-gray-500 font-medium">{{ metrics.wrinklesConfidence }}%</span>
+              </div>
+              <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
+                <div class="bg-[#10B981] h-2 rounded-full transition-all duration-500" [style.width.%]="metrics.wrinklesConfidence"></div>
+              </div>
+              <div class="flex justify-between items-center">
+                <button 
+                  (click)="toggleLayer('wrinkles')"
+                  [class]="'px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all duration-200 flex items-center gap-1.5 border ' + 
+                           (layers.wrinkles.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm ring-1 ring-emerald-500/10' : 'bg-gray-50 text-gray-400 hover:text-gray-600 border-gray-200')"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" [style.background-color]="layers.wrinkles.active ? '#10B981' : '#9CA3AF'"></span>
+                  {{ layers.wrinkles.active ? 'Heatmap Active' : 'Toggle Heatmap' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Metric 4: Redness -->
+            <div class="group border border-transparent rounded-lg p-2.5 -mx-2.5 hover:bg-gray-50 transition-colors">
+              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-1.5">
+                <span class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#EC4899] shrink-0" [class.animate-pulse]="layers.redness.active"></span>
+                  Redness / Erythema
+                </span>
+                <span class="text-gray-500 font-medium">{{ metrics.rednessConfidence }}%</span>
+              </div>
+              <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
+                <div class="bg-[#EC4899] h-2 rounded-full transition-all duration-500" [style.width.%]="metrics.rednessConfidence"></div>
+              </div>
+              <div class="flex justify-between items-center">
+                <button 
+                  (click)="toggleLayer('redness')"
+                  [class]="'px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all duration-200 flex items-center gap-1.5 border ' + 
+                           (layers.redness.active ? 'bg-pink-50 text-pink-700 border-pink-200 shadow-sm ring-1 ring-pink-500/10' : 'bg-gray-50 text-gray-400 hover:text-gray-600 border-gray-200')"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" [style.background-color]="layers.redness.active ? '#EC4899' : '#9CA3AF'"></span>
+                  {{ layers.redness.active ? 'Heatmap Active' : 'Toggle Heatmap' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Metric 5: Dark Circles -->
+            <div class="group border border-transparent rounded-lg p-2.5 -mx-2.5 hover:bg-gray-50 transition-colors">
+              <div class="flex justify-between text-[13px] font-bold text-gray-800 mb-1.5">
+                <span class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#6366F1] shrink-0" [class.animate-pulse]="layers.darkCircles.active"></span>
+                  Dark Circles / Eye Fatigue
+                </span>
+                <span class="text-gray-500 font-medium">{{ metrics.darkCirclesConfidence }}%</span>
+              </div>
+              <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
+                <div class="bg-[#6366F1] h-2 rounded-full transition-all duration-500" [style.width.%]="metrics.darkCirclesConfidence"></div>
+              </div>
+              <div class="flex justify-between items-center">
+                <button 
+                  (click)="toggleLayer('darkCircles')"
+                  [class]="'px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all duration-200 flex items-center gap-1.5 border ' + 
+                           (layers.darkCircles.active ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm ring-1 ring-indigo-500/10' : 'bg-gray-50 text-gray-400 hover:text-gray-600 border-gray-200')"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" [style.background-color]="layers.darkCircles.active ? '#6366F1' : '#9CA3AF'"></span>
+                  {{ layers.darkCircles.active ? 'Heatmap Active' : 'Toggle Heatmap' }}
+                </button>
               </div>
             </div>
           </div>

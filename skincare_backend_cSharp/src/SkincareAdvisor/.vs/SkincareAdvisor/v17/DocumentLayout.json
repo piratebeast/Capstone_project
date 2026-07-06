@@ -7,16 +7,16 @@
       "RelativeMoniker": "D:0:0:{4CA4B2E6-5480-4067-A688-7AE42F1BC2AE}|SkincareAdvisor.API\\SkincareAdvisor.API.csproj|solutionrelative:skincareadvisor.api\\controllers\\scancontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{F3125BC8-DD2F-441B-B677-A227782A72DD}|SkincareAdvisor.Infrastructure\\SkincareAdvisor.Infrastructure.csproj|d:\\code\\capstone_project\\skincare_backend_csharp\\src\\skincareadvisor\\skincareadvisor.infrastructure\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F3125BC8-DD2F-441B-B677-A227782A72DD}|SkincareAdvisor.Infrastructure\\SkincareAdvisor.Infrastructure.csproj|solutionrelative:skincareadvisor.infrastructure\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{F3125BC8-DD2F-441B-B677-A227782A72DD}|SkincareAdvisor.Infrastructure\\SkincareAdvisor.Infrastructure.csproj|d:\\code\\capstone_project\\skincare_backend_csharp\\src\\skincareadvisor\\skincareadvisor.infrastructure\\services\\scanservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{F3125BC8-DD2F-441B-B677-A227782A72DD}|SkincareAdvisor.Infrastructure\\SkincareAdvisor.Infrastructure.csproj|solutionrelative:skincareadvisor.infrastructure\\services\\scanservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D6A37EFB-515E-40C0-A538-760AE50FD545}|SkincareAdvisor.Application\\SkincareAdvisor.Application.csproj|d:\\code\\capstone_project\\skincare_backend_csharp\\src\\skincareadvisor\\skincareadvisor.application\\interfaces\\iscanservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D6A37EFB-515E-40C0-A538-760AE50FD545}|SkincareAdvisor.Application\\SkincareAdvisor.Application.csproj|solutionrelative:skincareadvisor.application\\interfaces\\iscanservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F3125BC8-DD2F-441B-B677-A227782A72DD}|SkincareAdvisor.Infrastructure\\SkincareAdvisor.Infrastructure.csproj|d:\\code\\capstone_project\\skincare_backend_csharp\\src\\skincareadvisor\\skincareadvisor.infrastructure\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F3125BC8-DD2F-441B-B677-A227782A72DD}|SkincareAdvisor.Infrastructure\\SkincareAdvisor.Infrastructure.csproj|solutionrelative:skincareadvisor.infrastructure\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{4CA4B2E6-5480-4067-A688-7AE42F1BC2AE}|SkincareAdvisor.API\\SkincareAdvisor.API.csproj|d:\\code\\capstone_project\\skincare_backend_csharp\\src\\skincareadvisor\\skincareadvisor.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -54,16 +54,15 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "AuthService.cs",
               "DocumentMoniker": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Infrastructure\\Services\\AuthService.cs",
               "RelativeDocumentMoniker": "SkincareAdvisor.Infrastructure\\Services\\AuthService.cs",
               "ToolTip": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Infrastructure\\Services\\AuthService.cs",
               "RelativeToolTip": "SkincareAdvisor.Infrastructure\\Services\\AuthService.cs",
-              "ViewState": "AgIAAEcAAAAAAAAAAAAwwE8AAAAxAAAAAAAAAA==",
+              "ViewState": "AgIAABwAAAAAAAAAAAAgwE8AAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-12T09:09:09.328Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-12T09:09:09.328Z"
             },
             {
               "$type": "Document",
@@ -75,8 +74,7 @@
               "RelativeToolTip": "SkincareAdvisor.API\\appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-05-12T09:02:26.479Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-12T09:02:26.479Z"
             },
             {
               "$type": "Document",
@@ -88,8 +86,7 @@
               "RelativeToolTip": "SkincareAdvisor.Application\\DTOs\\AuthDTOs.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-12T08:43:56.947Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-12T08:43:56.947Z"
             },
             {
               "$type": "Document",
@@ -101,8 +98,7 @@
               "RelativeToolTip": "SkincareAdvisor.Domain\\Entities\\ApplicationUser.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAyAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-06T19:48:16.96Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-06T19:48:16.96Z"
             },
             {
               "$type": "Document",
@@ -114,8 +110,7 @@
               "RelativeToolTip": "SkincareAdvisor.API\\Controllers\\AuthController.cs",
               "ViewState": "AgIAAA4AAAAAAAAAAAAAwC8AAABCAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-06T19:34:51.041Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-06T19:34:51.041Z"
             },
             {
               "$type": "Document",
@@ -125,7 +120,7 @@
               "RelativeDocumentMoniker": "SkincareAdvisor.API\\Controllers\\ScanController.cs",
               "ToolTip": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.API\\Controllers\\ScanController.cs",
               "RelativeToolTip": "SkincareAdvisor.API\\Controllers\\ScanController.cs",
-              "ViewState": "AgIAADIAAAAAAAAAAAAkwC8AAAAoAAAAAAAAAA==",
+              "ViewState": "AgIAAHgAAAAAAAAAAAAcwKAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-06T13:28:04.477Z",
               "EditorCaption": ""
@@ -144,7 +139,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "ScanService.cs",
               "DocumentMoniker": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Infrastructure\\Services\\ScanService.cs",
               "RelativeDocumentMoniker": "SkincareAdvisor.Infrastructure\\Services\\ScanService.cs",
@@ -152,12 +147,11 @@
               "RelativeToolTip": "SkincareAdvisor.Infrastructure\\Services\\ScanService.cs",
               "ViewState": "AgIAACAAAAAAAAAAAAAkwDsAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-06T12:54:12.59Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-06T12:54:12.59Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "IScanService.cs",
               "DocumentMoniker": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Application\\Interfaces\\IScanService.cs",
               "RelativeDocumentMoniker": "SkincareAdvisor.Application\\Interfaces\\IScanService.cs",
@@ -165,8 +159,7 @@
               "RelativeToolTip": "SkincareAdvisor.Application\\Interfaces\\IScanService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-06T12:53:24.286Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-06T12:53:24.286Z"
             },
             {
               "$type": "Document",
@@ -178,8 +171,7 @@
               "RelativeToolTip": "SkincareAdvisor.Application\\DTOs\\ScanDTOs.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAC0AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-06T12:29:58.326Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-06T12:29:58.326Z"
             }
           ]
         }

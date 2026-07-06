@@ -57,6 +57,8 @@ namespace SkincareAdvisor.API.Controllers
                     {
                         calculatedAge--;
                     }
+
+                    if (calculatedAge <= 0) { calculatedAge = 25; } // Handle future DOB edge case
                 }
                 // -----------------------------------------------
 

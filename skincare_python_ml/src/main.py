@@ -4,49 +4,61 @@ import mediapipe as mp
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 import uvicorn
 
-# Import your new master pipeline from the adjacent predictor.py file
+# Import your master pipeline from the adjacent predictor.py file
 from predictor import analyze_face_pipeline
 
 app = FastAPI(title="Dual-Brain Skincare API")
 
-# --- INITIALIZE MEDIAPIPE ONCE AT STARTUP ---
-mp_face_detection = mp.solutions.face_detection
-# model_selection=0 is optimized for close-range faces (like selfies within 2 meters)
-face_detector = mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.5)
+# --- INITIALIZE NEW MEDIAPIPE TASKS API ONCE AT STARTUP ---
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+
+model_path = r"D:\code\Capstone_project\skincare_python_ml\models\blaze_face_short_range.tflite"
+
+base_options = python.BaseOptions(model_asset_path=model_path)
+options = vision.FaceDetectorOptions(
+    base_options=base_options,
+    min_detection_confidence=0.5,
+    running_mode=vision.RunningMode.IMAGE
+)
+# Persistent global tasks detector
+face_detector = vision.FaceDetector.create_from_options(options)
 
 @app.post("/analyze") 
 async def analyze_face(
     file: UploadFile = File(...),
-    user_age: int = Form(25) # <-- NEW: Accepts age from C#, defaults to 25 if missing
+    user_age: int = Form(25) # Accepts age from C#, defaults to 25 if missing
 ):
     try:
         # 1. Read the raw bytes sent from your C# HttpClient
         image_bytes = await file.read()
         
         # ==========================================
-        # 2. VALIDATION PHASE (MediaPipe)
+        # 2. VALIDATION PHASE (Modern MediaPipe Tasks)
         # ==========================================
-        # Convert bytes into an OpenCV-readable format
         nparr = np.frombuffer(image_bytes, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
         if img is None:
             raise ValueError("Invalid image format or corrupted file.")
 
-        # Convert to RGB (MediaPipe requires RGB, OpenCV uses BGR by default)
+        # MediaPipe Tasks require RGB channel formatting
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        
+        # Convert OpenCV matrix frame to a formal MediaPipe Image object wrapper
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
 
-        # Run the blazing fast face detection
-        results = face_detector.process(img_rgb)
+        # Run modern face detection pass
+        detection_result = face_detector.detect(mp_image)
 
-        # Enforce the rules: Must have exactly 1 face
-        if not results.detections:
+        # Enforce the system rules: Must have exactly 1 face
+        if not detection_result.detections:
             raise HTTPException(
                 status_code=400, 
                 detail="NO_FACE_DETECTED" 
             )
             
-        if len(results.detections) > 1:
+        if len(detection_result.detections) > 1:
             raise HTTPException(
                 status_code=400, 
                 detail="MULTIPLE_FACES_DETECTED"
@@ -54,13 +66,11 @@ async def analyze_face(
         # ==========================================
 
         # 3. PREDICTION PHASE
-        # Now passing the REAL age that was calculated by your C# backend!
         final_payload = analyze_face_pipeline(image_bytes, user_age=user_age)
         
         return final_payload
 
     except HTTPException:
-        # If we explicitly raised an HTTPException (like the face errors), let it pass through
         raise
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))

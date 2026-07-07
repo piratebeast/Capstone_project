@@ -1,5 +1,31 @@
 [
   {
+    "ContainingType": "SkincareAdvisor.API.Controllers.AdminDashboardController",
+    "Method": "GetScanDetailForAdmin",
+    "RelativePath": "api/AdminDashboard/scans/{scanId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "scanId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SkincareAdvisor.API.Controllers.AdminDashboardController",
+    "Method": "GetAllScansSummary",
+    "RelativePath": "api/AdminDashboard/scans/summary",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "SkincareAdvisor.API.Controllers.AuthController",
     "Method": "Login",
     "RelativePath": "api/Auth/login",

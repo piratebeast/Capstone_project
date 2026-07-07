@@ -91,7 +91,6 @@ D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdv
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\obj\Debug\net9.0\staticwebassets.build.json.cache
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\obj\Debug\net9.0\staticwebassets.development.json
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\obj\Debug\net9.0\staticwebassets.build.endpoints.json
-D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\obj\Debug\net9.0\Skincare.F765DCB7.Up2Date
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\obj\Debug\net9.0\SkincareAdvisor.API.dll
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\obj\Debug\net9.0\refint\SkincareAdvisor.API.dll
@@ -183,3 +182,5 @@ D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdv
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\bin\Debug\net9.0\SkincareAdvisor.Application.dll
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\bin\Debug\net9.0\SkincareAdvisor.Application.pdb
 D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\bin\Debug\net9.0\SkincareAdvisor.API.staticwebassets.runtime.json
+D:\code\Capstone_project\skincare_backend_cSharp\src\SkincareAdvisor\SkincareAdvisor.API\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt

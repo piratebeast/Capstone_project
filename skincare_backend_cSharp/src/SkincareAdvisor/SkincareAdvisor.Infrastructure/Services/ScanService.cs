@@ -22,7 +22,7 @@ namespace SkincareAdvisor.Infrastructure.Services
             _httpClient.BaseAddress = new Uri("http://localhost:8000/");
         }
 
-        public async Task<AiScanResponse> AnalyzeImageAsync(IFormFile image, int userAge) // <-- 1. Add parameter
+        public async Task<AiScanResponse> AnalyzeImageAsync(IFormFile image, int userAge)
         {
             using var content = new MultipartFormDataContent();
 
@@ -30,12 +30,11 @@ namespace SkincareAdvisor.Infrastructure.Services
             using var stream = image.OpenReadStream();
             content.Add(new StreamContent(stream), "file", image.FileName);
 
-            // --- NEW LOGIC: Pack the user's age ---
+            // Pack the user's age
             content.Add(new StringContent(userAge.ToString()), "user_age");
-            // --------------------------------------
 
             // Send both the image and the age to Python
-            var response = await _httpClient.PostAsync("http://localhost:8000/analyze", content);
+            var response = await _httpClient.PostAsync("analyze", content);
 
             // --- Check if Python rejected the image! ---
             if (!response.IsSuccessStatusCode)
@@ -51,11 +50,25 @@ namespace SkincareAdvisor.Infrastructure.Services
                     throw new ArgumentException("Multiple faces detected. Please upload a solo selfie.");
                 }
 
-                throw new Exception("The AI Service encountered an error.");
+                throw new Exception($"The AI Service encountered an error. Status: {response.StatusCode}");
             }
 
-            // If successful (200 OK), deserialize it normally
-            var result = await response.Content.ReadFromJsonAsync<AiScanResponse>();
+            // ===================================================================
+            // 🛠️ MODIFICATION: Configure case-insensitive mapping options
+            // ===================================================================
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            // Deserialize using our optimized options layout to ingest all 5 float list vectors safely
+            var result = await response.Content.ReadFromJsonAsync<AiScanResponse>(jsonOptions);
+
+            if (result == null)
+            {
+                throw new Exception("Failed to deserialize the AI analysis payload payload contract.");
+            }
+
             return result;
         }
     }

@@ -1,7 +1,10 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -13,66 +16,49 @@ namespace SkincareAdvisor.Infrastructure.Services
 {
     /// <summary>
     /// Provides authentication operations for registering users, validating credentials,
-    /// and issuing JWT tokens.
+    /// and issuing JWT tokens with full Role-Based Access Control (RBAC).
     /// </summary>
     public class AuthService : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager; // NEW: Injected to manage ASP.NET system roles
         private readonly IConfiguration _configuration;
 
-        //Dependency Injection: We inject UserManager and IConfiguration to handle user operations and access app settings.
-        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration)
+        public AuthService(
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            IConfiguration configuration)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
             _configuration = configuration;
         }
 
-        /// <summary>
-        /// Validates user credentials and returns a JWT token when authentication succeeds.
-        /// </summary>
-        /// <param name="request">The login request containing email and password.</param>
-        /// <returns>An authentication response containing a token on success.</returns>
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            // 1. Use _userManager to find the user by their email
-            // This goes to the AspNetUsers table in your SQL Server
             var user = await _userManager.FindByEmailAsync(request.Email);
-
-            // 2. If the user doesn't exist, stop here.
-            // For security, we use a generic message so hackers don't know which part was wrong.
             if (user == null)
             {
                 return new AuthResponse(false, string.Empty, "Invalid email or password.");
             }
 
-            // 3. Use _userManager to check if the password is correct
-            // Identity handles the hashing and salting comparison automatically
             var isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
-
-            // 4. If the password is wrong, stop here with the same generic message.
             if (!isPasswordValid)
             {
                 return new AuthResponse(false, string.Empty, "Invalid email or password.");
             }
 
-            // 5. If everything is correct, generate the digital "passport" (JWT)
-            var token = GenerateJwtToken(user);
+            // MODIFIED: Generate token with roles asynchronously
+            var token = await GenerateJwtTokenAsync(user);
 
-            // 6. Return the token to the client so they can use it for future requests
             return new AuthResponse(true, token, "Login successful!");
         }
 
-        /// <summary>
-        /// Registers a new user and returns a JWT token when registration succeeds.
-        /// </summary>
-        /// <param name="request">The registration request containing user details.</param>
-        /// <returns>An authentication response containing a token on success.</returns>
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
-            // 1. Map DTO to Entity
             var user = new ApplicationUser
             {
-                UserName = request.Email, // Identity uses UserName for unique identification
+                UserName = request.Email,
                 Email = request.Email,
                 FullName = request.FullName,
                 Gender = request.Gender,
@@ -80,50 +66,70 @@ namespace SkincareAdvisor.Infrastructure.Services
                 DateOfBirth = request.DateOfBirth
             };
 
-            // 2. Attempt to create the user
-            // Note: CreateAsync returns an 'IdentityResult' object
             var result = await _userManager.CreateAsync(user, request.Password);
-
-            // 3. Handle failure
             if (!result.Succeeded)
             {
-                // Logic Tip: result.Errors is a collection. 
-                // Grab the first description to show the user what went wrong.
                 var firstError = result.Errors.FirstOrDefault()?.Description ?? "Registration failed.";
                 return new AuthResponse(false, string.Empty, firstError);
             }
 
-            // 4. Handle success
-            // Call the private helper method we wrote earlier
-            var token = GenerateJwtToken(user);
+            // ===================================================================
+            // 🛠️ NEW LOGIC: DYNAMIC SCHEMATIC ROLE ASSIGNMENT
+            // ===================================================================
+            // Define standard application roles contract
+            string targetRole = "Patient";
 
+            // Capstone Testing Convenience Override: 
+            // If the user registers with an administrative corporate email domain, seed them as an Admin!
+            if (request.Email.EndsWith("@skinai.admin") || request.Email.Equals("admin@skinai.local"))
+            {
+                targetRole = "Admin";
+            }
+
+            // Ensure the role exists in the database table (AspNetRoles)
+            if (!await _roleManager.RoleExistsAsync(targetRole))
+            {
+                await _roleManager.CreateAsync(new IdentityRole(targetRole));
+            }
+
+            // Map the user to the role in the junction mapping table (AspNetUserRoles)
+            await _userManager.AddToRoleAsync(user, targetRole);
+            // ===================================================================
+
+            var token = await GenerateJwtTokenAsync(user);
             return new AuthResponse(true, token, "Registration successful!");
         }
 
-        // --- BOILERPLATE: JWT Generation Logic ---
         /// <summary>
-        /// Creates a signed JWT token for the specified user using configuration settings.
+        /// Creates a signed JWT token containing user identity attributes and role collections.
         /// </summary>
-        /// <param name="user">The authenticated user.</param>
-        /// <returns>A serialized JWT token.</returns>
-        private string GenerateJwtToken(ApplicationUser user)
+        private async Task<string> GenerateJwtTokenAsync(ApplicationUser user)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["Key"];
 
-            // 1. Create the security key from your environment variable
             var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!));
             var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
 
-            // 2. Define the "Claims" (the data hidden inside the token)
             var claims = new List<Claim>
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
-            new Claim("FullName", user.FullName ?? "") // Custom claim for your app
-        };
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+                new Claim("FullName", user.FullName ?? "")
+            };
 
-            // 3. Assemble the token
+            // ===================================================================
+            // 🛠️ NEW LOGIC: APPEND ROLES INTO THE JWT TOKEN CLAIMS STRINGS
+            // ===================================================================
+            // Fetch all roles assigned to this specific user from the database
+            var userRoles = await _userManager.GetRolesAsync(user);
+            foreach (var role in userRoles)
+            {
+                // ClaimTypes.Role maps directly to the standard C# [Authorize(Roles = "...")] tag analyzer
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+            // ===================================================================
+
             var token = new JwtSecurityToken(
                 issuer: jwtSettings["Issuer"],
                 audience: jwtSettings["Audience"],
@@ -132,9 +138,7 @@ namespace SkincareAdvisor.Infrastructure.Services
                 signingCredentials: signingCredentials
             );
 
-            // 4. Serialize the token to a string so Flutter can read it
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
     }
 }

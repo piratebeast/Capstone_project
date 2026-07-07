@@ -31,44 +31,59 @@ namespace SkincareAdvisor.API.Controllers
         [HttpPost("analyze")]
         public async Task<IActionResult> AnalyzeFace([FromForm] ScanRequest request)
         {
-            // 1. Validation
             if (request.image == null || request.image.Length == 0)
                 return BadRequest("No image was uploaded.");
 
             try
             {
-                // 2. Extract the logged-in User's ID directly from their JWT Token
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized("User is not authenticated.");
 
-                // --- NEW LOGIC: Fetch User and Calculate Age ---
+                // 1. Calculate Age (Keep your precise age deduction logic block)
                 var user = await _context.Users.FindAsync(userId);
-                int calculatedAge = 25; // Safe default
-
+                int calculatedAge = 25;
                 if (user != null && user.DateOfBirth.HasValue)
                 {
                     var today = DateTime.Today;
                     var dob = user.DateOfBirth.Value;
                     calculatedAge = today.Year - dob.Year;
-
-                    if (dob.Date > today.AddYears(-calculatedAge))
-                    {
-                        calculatedAge--;
-                    }
-
-                    if (calculatedAge <= 0) { calculatedAge = 25; } // Handle future DOB edge case
+                    if (dob.Date > today.AddYears(-calculatedAge)) calculatedAge--;
+                    if (calculatedAge <= 0) { calculatedAge = 25; }
                 }
-                // -----------------------------------------------
 
-                // 3. Call the Python FastAPI Server (Now passing BOTH image and age!)
+                // ===================================================================
+                // 2. NEW LOGIC: PERMANENTLY SAVE THE ORIGINAL IMAGE FILE TO DISK
+                // ===================================================================
+                var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(request.image.FileName)}";
+
+                // Target physical path pointing into the wwwroot folder assets deployment map
+                var targetStorageFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "scans");
+                if (!Directory.Exists(targetStorageFolder))
+                {
+                    Directory.CreateDirectory(targetStorageFolder);
+                }
+
+                var fullPhysicalWritePath = Path.Combine(targetStorageFolder, uniqueFileName);
+
+                // Stream copy the bytes straight out of memory to write to disk
+                using (var fileStream = new FileStream(fullPhysicalWritePath, FileMode.Create))
+                {
+                    await request.image.CopyToAsync(fileStream);
+                }
+
+                // Web address relative pointer url path string stored into the relational row
+                var savedWebImageUrl = $"/uploads/scans/{uniqueFileName}";
+                // ===================================================================
+
+                // 3. Call the Python FastAPI Server 
                 AiScanResponse aiResult = await _scanService.AnalyzeImageAsync(request.image, calculatedAge);
 
-                // 4. Map the Python DTO into our Database Entity
+                // 4. Map the Extended DTO into our Database Entity
                 var scanHistory = new ScanHistory
                 {
                     UserId = userId,
+                    ImageUrl = savedWebImageUrl, // <-- Save file reference link string
                     Acne = aiResult.Diagnostics.Acne,
                     DarkSpots = aiResult.Diagnostics.DarkSpots,
                     Wrinkles = aiResult.Diagnostics.Wrinkles,
@@ -78,7 +93,13 @@ namespace SkincareAdvisor.API.Controllers
                     RoutineClass = aiResult.RoutineClass,
                     Confidence = aiResult.Confidence,
 
-                    // Map the lists
+                    // NEW: Maps the in-memory matrix list channels through our Value Converter backings
+                    AcneHeatmap = aiResult.Heatmaps.Acne,
+                    DarkSpotsHeatmap = aiResult.Heatmaps.DarkSpots,
+                    WrinklesHeatmap = aiResult.Heatmaps.Wrinkles,
+                    RednessHeatmap = aiResult.Heatmaps.Redness,
+                    DarkCirclesHeatmap = aiResult.Heatmaps.DarkCircles,
+
                     DailyAm = aiResult.RegimenSchedule.DailyAm.Select(a => new RoutineStepEntity
                     {
                         Step = a.Step,
@@ -101,28 +122,26 @@ namespace SkincareAdvisor.API.Controllers
                     }).ToList()
                 };
 
-                // 5. Save to SQL Server
+                // 5. Save Transaction directly inside SQL Server
                 _context.ScanHistories.Add(scanHistory);
                 await _context.SaveChangesAsync();
 
-                // 6. Return the full custom routine to the Flutter App!
                 return Ok(new
                 {
                     Message = "Scan complete and saved successfully!",
-                    ScanId = scanHistory.Id, // <-- CRITICAL: The frontend needs this ID
+                    ScanId = scanHistory.Id,
                     Data = new
                     {
                         Diagnostics = aiResult.Diagnostics,
-                        Confidence = aiResult.Confidence
+                        Confidence = aiResult.Confidence,
+                        ImageUrl = savedWebImageUrl // Ships the reference URL directly back to your client apps
                     }
                 });
             }
-            // Catch for specific exceptions thrown by the Python service (MediaPipe checks)
             catch (ArgumentException ex)
             {
                 return BadRequest(new { Error = "Invalid Image", Message = ex.Message });
             }
-            // Catch any other unexpected exceptions (Python offline, DB crashes, etc.)
             catch (Exception ex)
             {
                 return StatusCode(500, $"An error occurred during analysis: {ex.Message}");

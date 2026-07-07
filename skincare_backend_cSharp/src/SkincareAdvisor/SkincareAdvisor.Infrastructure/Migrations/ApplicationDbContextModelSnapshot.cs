@@ -244,21 +244,41 @@ namespace SkincareAdvisor.Infrastructure.Migrations
                     b.Property<double>("Acne")
                         .HasColumnType("float");
 
+                    b.Property<string>("AcneHeatmap")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(MAX)");
+
                     b.Property<double>("Confidence")
                         .HasColumnType("float");
 
                     b.Property<double>("DarkCircles")
                         .HasColumnType("float");
 
+                    b.Property<string>("DarkCirclesHeatmap")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(MAX)");
+
                     b.Property<double>("DarkSpots")
                         .HasColumnType("float");
+
+                    b.Property<string>("DarkSpotsHeatmap")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(MAX)");
 
                     b.Property<string>("Gender")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<double>("Redness")
                         .HasColumnType("float");
+
+                    b.Property<string>("RednessHeatmap")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(MAX)");
 
                     b.Property<string>("RoutineClass")
                         .IsRequired()
@@ -273,6 +293,10 @@ namespace SkincareAdvisor.Infrastructure.Migrations
 
                     b.Property<double>("Wrinkles")
                         .HasColumnType("float");
+
+                    b.Property<string>("WrinklesHeatmap")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR(MAX)");
 
                     b.HasKey("Id");
 

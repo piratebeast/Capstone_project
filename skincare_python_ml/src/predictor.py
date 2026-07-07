@@ -2,10 +2,10 @@ import cv2
 import numpy as np
 import pandas as pd
 import joblib
+import onnx
 import onnxruntime as ort
 from datetime import datetime
 from tensorflow.keras.applications.resnet50 import preprocess_input
-
 
 # ---------------------------------------------------------------------------
 # 1. LOAD MODELS  (global scope — loads once on FastAPI startup)
@@ -15,7 +15,7 @@ face_cascade = cv2.CascadeClassifier(
 )
 
 try:
-    model_path   = r"D:\code\Capstone_project\skincare_python_ml\brain2_random_forest.pkl"
+    model_path = r"D:\code\Capstone_project\skincare_python_ml\brain2_random_forest.pkl"
     brain2_artifact = joblib.load(model_path)
 
     rf_model    = brain2_artifact['model']
@@ -26,17 +26,44 @@ except Exception as e:
     print(f"❌ Brain 2 load failed: {e}")
     rf_model = rf_features = rf_targets = None
 
-# Load Brain 1 ONNX models
+# Helper to inject intermediate layers into ONNX graph in-memory on startup
+def load_onnx_session_with_features(relative_path, providers):
+    """
+    Loads an ONNX model from disk, appends its last Conv output node in-memory, 
+    and returns both the active session and the target conv tensor name.
+    """
+    onnx_base = r"D:\code\Capstone_project\skincare_python_ml"
+    full_path = onnx_base + relative_path
+    model = onnx.load(full_path)
+    
+    # Locate the final convolutional node automatically
+    conv_nodes = [n for n in model.graph.node if n.op_type == "Conv"]
+    if not conv_nodes:
+        raise ValueError(f"No Conv nodes found inside model graph at: {relative_path}")
+        
+    last_conv_tensor = conv_nodes[-1].output[0]
+    
+    # Inject intermediate tracking layer into the output graph definitions
+    new_output = onnx.helper.make_tensor_value_info(last_conv_tensor, onnx.TensorProto.FLOAT, None)
+    model.graph.output.append(new_output)
+    
+    # Compile directly to session string memory without writing a file to disk
+    session = ort.InferenceSession(model.SerializeToString(), providers=providers)
+    return session, last_conv_tensor
+
+# Load Brain 1 ONNX models with Heatmap feature trackers attached
 try:
     providers = ['CPUExecutionProvider']
     onnx_base = r"D:\code\Capstone_project\skincare_python_ml"
  
-    session_acne        = ort.InferenceSession(onnx_base + r"\acne_keras\acne_mvp_model.onnx",             providers=providers)
-    session_dark_spots  = ort.InferenceSession(onnx_base + r"\dark_spots_keras\dark_spots_phase1.onnx",    providers=providers)
-    session_wrinkles    = ort.InferenceSession(onnx_base + r"\wrinkles_keras\wrinkles_v2_production.onnx", providers=providers)
-    session_redness     = ort.InferenceSession(onnx_base + r"\redness_keras\redness_v1_production.onnx",   providers=providers)
-    session_dark_circle = ort.InferenceSession(onnx_base + r"\dark_circle_keras\dark_circle_final.onnx",   providers=providers)
-    session_gender      = ort.InferenceSession(onnx_base + r"\gender_keras\gender_production_fixed.onnx",  providers=providers)
+    session_acne, acne_conv         = load_onnx_session_with_features(r"\acne_keras\acne_mvp_model.onnx", providers)
+    session_dark_spots, spots_conv   = load_onnx_session_with_features(r"\dark_spots_keras\dark_spots_phase1.onnx", providers)
+    session_wrinkles, wrinkles_conv = load_onnx_session_with_features(r"\wrinkles_keras\wrinkles_v2_production.onnx", providers)
+    session_redness, redness_conv   = load_onnx_session_with_features(r"\redness_keras\redness_v1_production.onnx", providers)
+    session_dark_circle, circles_conv = load_onnx_session_with_features(r"\dark_circle_keras\dark_circle_final.onnx", providers)
+    
+    # Gender model stays standard (no heatmaps needed)
+    session_gender                  = ort.InferenceSession(onnx_base + r"\gender_keras\gender_production_fixed.onnx", providers=providers)
  
     # Cache input names for prediction mapping
     in_acne        = session_acne.get_inputs()[0].name
@@ -46,21 +73,19 @@ try:
     in_dark_circle = session_dark_circle.get_inputs()[0].name
     in_gender      = session_gender.get_inputs()[0].name
  
-    print("✅ Brain 1 (ONNX) loaded successfully.")
+    print("✅ Brain 1 (ONNX) loaded successfully with intermediate feature maps.")
 except Exception as e:
     print(f"❌ Brain 1 ONNX load failed: {e}")
     session_acne = session_dark_spots = session_wrinkles = None
     session_redness = session_dark_circle = session_gender = None
 
 # ---------------------------------------------------------------------------
-# 2. IMAGE PROCESSING
+# 2. IMAGE PROCESSING (Streamlined & Cleaned)
 # ---------------------------------------------------------------------------
 def process_image(image_bytes: bytes):
     """
-    Decodes image bytes, detects the primary face, crops and resizes to 224×224.
-    Returns two tensors:
-      tensor_path_a — normalised [0,1]  (for custom CNN heads)
-      tensor_path_b — ResNet50 preprocess_input  (for Brain 1 ResNet50)
+    Decodes image bytes and resizes directly to 224x224.
+    Face alignment validation is pre-handled by MediaPipe Tasks in main.py.
     """
     nparr = np.frombuffer(image_bytes, np.uint8)
     img   = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -68,15 +93,9 @@ def process_image(image_bytes: bytes):
         raise ValueError("Could not decode image. Ensure the upload is a valid JPEG/PNG.")
 
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    gray    = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
 
-    faces = face_cascade.detectMultiScale(
-        gray, scaleFactor=1.1, minNeighbors=5, minSize=(100, 100)
-    )
-    face_crop = img_rgb[faces[0][1]:faces[0][1]+faces[0][3],
-                        faces[0][0]:faces[0][0]+faces[0][2]] if len(faces) > 0 else img_rgb
-
-    resized   = cv2.resize(face_crop, (224, 224), interpolation=cv2.INTER_LINEAR)
+    # Directly resize the valid face frame to your target dimensions
+    resized   = cv2.resize(img_rgb, (224, 224), interpolation=cv2.INTER_LINEAR)
     img_float = resized.astype(np.float32)
 
     # Path A: simple [0,1] normalisation
@@ -87,52 +106,86 @@ def process_image(image_bytes: bytes):
 
     return tensor_a, tensor_b
 
+# ---------------------------------------------------------------------------
+# 3. FIXED HIGH-PERFORMANCE HEATMAP EXTRACTOR PIPELINE UTILITY
+# ---------------------------------------------------------------------------
+def extract_pipeline_heatmap(session, last_conv_tensor, target_node_name, model_input):
+    """
+    Computes a forward pass on an open session, isolates convolutional tensors safely,
+    applies adaptive 40% noise reduction, and outputs a 50,176 element 1D array.
+    """
+    try:
+        # 1. Gather all output names from the current session runtime
+        output_names = [o.name for o in session.get_outputs()]
+        
+        # Verify both target tensors exist inside the session graph mapping
+        if last_conv_tensor not in output_names:
+            raise ValueError(f"Target node '{last_conv_tensor}' is missing from the session outputs.")
+            
+        pred_node = [n for n in output_names if n != last_conv_tensor][0]
+        
+        # Run inference and map output names directly to separate variables
+        outputs = session.run([pred_node, last_conv_tensor], {target_node_name: model_input})
+        
+        # Create a clean dictionary mapping tensor names to their raw array results
+        output_map = dict(zip([pred_node, last_conv_tensor], outputs))
+        
+        # FIXED: Extract ONLY the dedicated convolutional tensor array explicitly by name!
+        f_map = output_map[last_conv_tensor][0]
+        
+        # 2. Dynamically manage channels layout format matching (NCHW vs NHWC)
+        if f_map.shape[0] == 2048 or f_map.shape[0] == 512:
+            f_map = np.transpose(f_map, (1, 2, 0))
+            
+        # Max-pooling isolates focal feature changes while filtering background room haze
+        heatmap_raw = np.max(f_map, axis=-1)
+        heatmap_raw = np.maximum(heatmap_raw, 0) # Apply clean structural ReLU
+        
+        # 3. Bounding scale normalization [0, 1]
+        max_val = np.max(heatmap_raw)
+        min_val = np.min(heatmap_raw)
+        if max_val - min_val > 1e-8:
+            heatmap_raw = (heatmap_raw - min_val) / (max_val - min_val)
+            
+        # Apply your verified 40% threshold filter cutoff to erase outer environment borders
+        heatmap_raw[heatmap_raw < 0.40] = 0.0
+        
+        # 4. Upsample directly to standard data grid bounds canvas (224, 224)
+        heatmap_224 = cv2.resize(heatmap_raw, (224, 224), interpolation=cv2.INTER_LINEAR)
+        
+        # Stretch active regions evenly across space bounds 
+        final_max = np.max(heatmap_224)
+        if final_max > 0:
+            heatmap_224 = heatmap_224 / final_max
+            
+        # Flatten array matrix grid into 1D data list contract for database transmission
+        return heatmap_224.flatten().round(4).tolist()
+
+    except Exception as e:
+        print(f"⚠️ Heatmap production failure on node {last_conv_tensor}: {e}")
+        return np.zeros(50176, dtype=np.float32).tolist()
 
 # ---------------------------------------------------------------------------
-# 3. CLINICAL SAFETY ADAPTER
+# 4. CLINICAL SAFETY ADAPTER
 # ---------------------------------------------------------------------------
-_SAFE_STEPS = True   # set False to skip renumbering during unit tests
+_SAFE_STEPS = True
 
 def _renumber(routine: list) -> list:
-    """Re-assign step numbers sequentially after all inserts are done."""
     for i, item in enumerate(routine, start=1):
         item["step"] = i
     return routine
 
-
 def assemble_safe_routine(predictions: np.ndarray, redness_score: float):
-    """
-    Maps the RF's 5-element binary prediction array to a clinically safe
-    AM/PM/weekly regimen.
-
-    Ingredient index contract (must match rf_targets order):
-      0 → needs_salicylic_acid
-      1 → needs_retinol
-      2 → needs_vitamin_c
-      3 → needs_niacinamide
-      4 → needs_azelaic_acid
-
-    Safety rules enforced:
-      R1 — Salicylic + Retinol conflict: split to AM / PM
-      R2 — Solo Retinol: start 2×/week, not daily (barrier protection)
-      R3 — Niacinamide always AM (anti-inflammatory under SPF)
-      R4 — Vitamin C always AM (antioxidant synergy with SPF)
-      R5 — Azelaic Acid always PM (less photosensitising than Salicylic)
-      R6 — Salicylic without Retinol: PM only (avoid daytime irritation)
-      R7 — High redness (≥0.65): downgrade Salicylic to Azelaic if RF missed it
-    """
     needs_sal = bool(predictions[0])
     needs_ret = bool(predictions[1])
     needs_vit = bool(predictions[2])
     needs_nia = bool(predictions[3])
     needs_aze = bool(predictions[4])
 
-    # R7: safety override for very sensitive skin
     if needs_sal and redness_score >= 0.65:
         needs_sal = False
         needs_aze = True
 
-    # Base routine (steps will be renumbered at the end)
     am_routine = [
         {"step": 0, "product": "Gentle Milk Cleanser",  "purpose": "Cleanse without stripping barrier"},
         {"step": 0, "product": "Mineral SPF 50+",        "purpose": "Broad-spectrum UV protection"},
@@ -144,9 +197,6 @@ def assemble_safe_routine(predictions: np.ndarray, redness_score: float):
     weekly_treatments = []
     routine_class     = "BALANCED_MAINTENANCE"
 
-    # ── Active ingredient slot assignment ──────────────────────────────────
-
-    # R4: Vitamin C → AM treatment slot (insert before SPF)
     if needs_vit:
         am_routine.insert(1, {
             "step": 0,
@@ -154,7 +204,6 @@ def assemble_safe_routine(predictions: np.ndarray, redness_score: float):
             "purpose": "Antioxidant protection, brightening dark spots and circles",
         })
 
-    # R3: Niacinamide → AM (after Vitamin C if present)
     if needs_nia:
         am_routine.insert(2 if needs_vit else 1, {
             "step": 0,
@@ -162,7 +211,6 @@ def assemble_safe_routine(predictions: np.ndarray, redness_score: float):
             "purpose": "Reduce inflammation, regulate sebum",
         })
 
-    # R1: Salicylic + Retinol conflict — split across slots
     if needs_sal and needs_ret:
         routine_class = "ACNE_AND_AGING_REPAIR"
         am_routine.insert(1, {
@@ -175,8 +223,6 @@ def assemble_safe_routine(predictions: np.ndarray, redness_score: float):
             "product": "Encapsulated Retinol (0.2%)",
             "purpose": "Accelerate cell turnover, reduce fine lines",
         })
-
-    # R6: Solo Salicylic → PM only
     elif needs_sal:
         routine_class = "ACNE_CONTROL"
         pm_routine.insert(1, {
@@ -184,21 +230,15 @@ def assemble_safe_routine(predictions: np.ndarray, redness_score: float):
             "product": "Salicylic Acid 2%",
             "purpose": "Exfoliate pores, control acne",
         })
-
-    # R2: Solo Retinol → weekly ramp-up protocol, not daily PM
     elif needs_ret:
         routine_class = "ANTI_AGING_RENEWAL"
         weekly_treatments.append({
             "product": "Encapsulated Retinol (0.2%)",
             "frequency": "2× per week (increase to nightly after 4 weeks)",
             "slot": "PM — after moisturizer as the final step",
-            "instructions": (
-                "Apply a pea-sized amount. If stinging or peeling occurs, "
-                "reduce to 1× per week and build up slowly."
-            ),
+            "instructions": "Apply a pea-sized amount. If stinging occurs, reduce frequency.",
         })
 
-    # R5: Azelaic Acid → PM (gentler alternative for redness-prone skin)
     if needs_aze:
         if routine_class == "BALANCED_MAINTENANCE":
             routine_class = "ACNE_REDNESS_CONTROL"
@@ -208,68 +248,44 @@ def assemble_safe_routine(predictions: np.ndarray, redness_score: float):
             "purpose": "Reduce redness, control acne without irritation",
         })
 
-    # ── Weekly treatments (condition-based boosters) ───────────────────────
-
-    # Retinol solo already added above. Additional weekly boosters:
-
-    # Acne patients benefit from a weekly clay mask to deep-clean pores
     if needs_sal or needs_aze:
         weekly_treatments.append({
             "product": "Kaolin Clay Mask",
             "frequency": "1× per week",
             "slot": "PM — after cleansing, before moisturizer",
-            "instructions": (
-                "Apply a thin layer to the face, leave for 10 minutes, "
-                "rinse thoroughly with lukewarm water."
-            ),
+            "instructions": "Apply a thin layer to the face, leave for 10 minutes, rinse thoroughly.",
         })
 
-    # Pigmentation patients benefit from a weekly chemical exfoliant
     if needs_vit:
         weekly_treatments.append({
             "product": "AHA 10% Exfoliating Toner (Glycolic Acid)",
             "frequency": "1–2× per week",
             "slot": "PM — after cleansing, before serums",
-            "instructions": (
-                "Apply with a cotton pad, do not rinse off. "
-                "Do not use on the same night as Retinol. "
-                "Always follow with SPF the next morning."
-            ),
+            "instructions": "Apply with a cotton pad, do not rinse off. Do not use on same night as Retinol.",
         })
 
-    # Dark circles benefit from a weekly caffeine + peptide eye treatment
     if redness_score < 0.5 and not needs_aze:
         weekly_treatments.append({
             "product": "Caffeine + Peptide Eye Mask Patches",
             "frequency": "2× per week",
             "slot": "AM or PM — under-eye area only",
-            "instructions": (
-                "Apply patches to clean, dry under-eye skin. "
-                "Leave for 15–20 minutes, pat in remaining serum."
-            ),
+            "instructions": "Apply patches to clean, dry under-eye skin. Leave for 15–20 minutes.",
         })
 
-    # Everyone benefits from a weekly hydrating barrier mask
     weekly_treatments.append({
         "product": "Hyaluronic Acid Sheet Mask",
         "frequency": "1× per week",
         "slot": "PM — after cleansing, before moisturizer",
-        "instructions": (
-            "Apply to clean face for 15–20 minutes. "
-            "Remove mask and pat remaining essence into skin. "
-            "Follow with your regular PM moisturizer."
-        ),
+        "instructions": "Apply to clean face for 15–20 minutes, then follow with regular PM moisturizer.",
     })
 
-    # Renumber all steps sequentially
     am_routine = _renumber(am_routine)
     pm_routine = _renumber(pm_routine)
 
     return routine_class, am_routine, pm_routine, weekly_treatments
 
-
 # ---------------------------------------------------------------------------
-# 4. CONFIDENCE SCORE  (from predict_proba, not hardcoded)
+# 5. CONFIDENCE SCORE
 # ---------------------------------------------------------------------------
 def compute_confidence(rf_model, rf_input: np.ndarray, predictions: np.ndarray) -> float:
     """
@@ -278,44 +294,49 @@ def compute_confidence(rf_model, rf_input: np.ndarray, predictions: np.ndarray) 
     """
     try:
         # predict_proba returns a list of (n_samples, 2) arrays, one per target
-        probas = rf_model.predict_proba(rf_input)   # list of 5 arrays
+        probas = rf_model.predict_proba(rf_input)
         confidences = []
         for i, pred in enumerate(predictions):
             # pred is 0 or 1; take the probability of the predicted class
             confidences.append(float(probas[i][0][int(pred)]))
         return round(float(np.mean(confidences)), 4)
     except Exception:
-        return 0.0   # fallback if proba not available
-
-
+        return 0.0  # fallback if proba not available
+    
 # ---------------------------------------------------------------------------
-# 5. MASTER PIPELINE
+# 6. MASTER PIPELINE
 # ---------------------------------------------------------------------------
 def analyze_face_pipeline(image_bytes: bytes, user_age) -> dict:
     """
-    Orchestrates Brain 1 → Brain 2 → Safety Adapter.
-    Returns the JSON contract consumed by the C# / .NET 8.0 backend.
+    Orchestrates Brain 1 -> Spatial Heatmap Computations -> Brain 2 -> JSON Contract.
     """
-
     # ── Step 1: Image processing ───────────────────────────────────────────
     tensor_a, tensor_b = process_image(image_bytes)
 
-    # ── Step 2: Brain 1 ONNX inference ────────────────────────────────────────
     if session_acne is None:
         raise RuntimeError("Brain 1 ONNX models are not loaded into memory.")
 
-    # Execute ONNX sessions. 
-    # NOTE: I am defaulting to tensor_b (ResNet50 preprocess). 
-    # If any specific model was trained on the [0,1] normalized data, pass tensor_a instead.
-    
-    raw_acne         = session_acne.run(None, {in_acne: tensor_b})[0][0]
-    raw_dark_spots   = session_dark_spots.run(None, {in_dark_spots: tensor_b})[0][0]
-    raw_wrinkles     = session_wrinkles.run(None, {in_wrinkles: tensor_b})[0][0]
-    raw_redness      = session_redness.run(None, {in_redness: tensor_b})[0][0]
-    raw_dark_circles = session_dark_circle.run(None, {in_dark_circle: tensor_b})[0][0]
-    raw_gender       = session_gender.run(None, {in_gender: tensor_b})[0][0]
+    # Cast to strict float32 precision arrays to prevent double validation typing crashes
+    onnx_input_tensor = tensor_b.astype(np.float32)
 
-    # Map raw float outputs (0.0 - 1.0) to 0-100 scores
+    # ── Step 2: Spatial Feature Heatmap Generation ─────────────────────────
+    # Run the optimized channel-aggregation extraction logic across all 5 models simultaneously
+    print("[Inference] Computing diagnostic heatmaps via raw forward passes...")
+    acne_map        = extract_pipeline_heatmap(session_acne, acne_conv, in_acne, onnx_input_tensor)
+    dark_spots_map  = extract_pipeline_heatmap(session_dark_spots, spots_conv, in_dark_spots, onnx_input_tensor)
+    wrinkles_map    = extract_pipeline_heatmap(session_wrinkles, wrinkles_conv, in_wrinkles, onnx_input_tensor)
+    redness_map     = extract_pipeline_heatmap(session_redness, redness_conv, in_redness, onnx_input_tensor)
+    dark_circles_map = extract_pipeline_heatmap(session_dark_circle, circles_conv, in_dark_circle, onnx_input_tensor)
+
+    # ── Step 3: Diagnostic Scoring Calculations ────────────────────────────
+    # Extract baseline prediction nodes to compute severity percentages
+    raw_acne         = session_acne.run(None, {in_acne: onnx_input_tensor})[0][0]
+    raw_dark_spots   = session_dark_spots.run(None, {in_dark_spots: onnx_input_tensor})[0][0]
+    raw_wrinkles     = session_wrinkles.run(None, {in_wrinkles: onnx_input_tensor})[0][0]
+    raw_redness      = session_redness.run(None, {in_redness: onnx_input_tensor})[0][0]
+    raw_dark_circles = session_dark_circle.run(None, {in_dark_circle: onnx_input_tensor})[0][0]
+    raw_gender       = session_gender.run(None, {in_gender: onnx_input_tensor})[0][0]
+
     acne_val         = round(float(raw_acne[0] * 100), 2)
     dark_spots_val   = round(float(raw_dark_spots[0] * 100), 2)
     wrinkles_val     = round(float(raw_wrinkles[0] * 100), 2)
@@ -335,7 +356,7 @@ def analyze_face_pipeline(image_bytes: bytes, user_age) -> dict:
         "gender":       gender_val,
     }
     
-    # ── Step 3: Brain 2 — Random Forest inference ──────────────────────────
+    # ── Step 4: Brain 2 — Random Forest recommendation engine ──────────────
     routine_class  = "MANUAL_REVIEW"
     am, pm, weekly = [], [], []
     confidence     = 0.0
@@ -359,12 +380,19 @@ def analyze_face_pipeline(image_bytes: bytes, user_age) -> dict:
             rf_predictions, redness_norm
         )
 
-    # ── Step 5: Build final JSON contract for C# ───────────────────────────
+    # ── Step 5: Build extended data contract for ASP.NET ───────────────────
     return {
         "scanDate":     datetime.now().isoformat(),
         "routineClass": routine_class,
         "confidence":   confidence,
         "diagnostics":  diagnostics,
+        "heatmaps": {
+            "acne":        acne_map,
+            "darkSpots":   dark_spots_map,
+            "wrinkles":    wrinkles_map,
+            "redness":     redness_map,
+            "darkCircles": dark_circles_map
+        },
         "regimenSchedule": {
             "dailyAm":          am,
             "dailyPm":          pm,

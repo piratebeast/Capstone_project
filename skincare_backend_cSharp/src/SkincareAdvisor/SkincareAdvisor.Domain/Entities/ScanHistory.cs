@@ -29,6 +29,16 @@ namespace SkincareAdvisor.Domain.Entities
         public List<RoutineStepEntity> DailyAm { get; set; } = new();
         public List<RoutineStepEntity> DailyPm { get; set; } = new();
         public List<WeeklyTreatmentEntity> WeeklyTreatments { get; set; } = new();
+
+        // NEW: Stores the web accessible URL path to the original image file
+        public string ImageUrl { get; set; } = string.Empty;
+
+        // NEW: Flat heatmap collection channels (Stored internally as text backings)
+        public List<float> AcneHeatmap { get; set; } = new();
+        public List<float> DarkSpotsHeatmap { get; set; } = new();
+        public List<float> WrinklesHeatmap { get; set; } = new();
+        public List<float> RednessHeatmap { get; set; } = new();
+        public List<float> DarkCirclesHeatmap { get; set; } = new();
     }
 
     // Classes specifically for the Database

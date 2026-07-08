@@ -39,6 +39,9 @@ namespace SkincareAdvisor.Domain.Entities
         public List<float> WrinklesHeatmap { get; set; } = new();
         public List<float> RednessHeatmap { get; set; } = new();
         public List<float> DarkCirclesHeatmap { get; set; } = new();
+
+        // NEW: Soft delete indicator
+        public bool IsDeleted { get; set; } = false;
     }
 
     // Classes specifically for the Database

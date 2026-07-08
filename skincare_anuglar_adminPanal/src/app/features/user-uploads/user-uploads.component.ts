@@ -1,21 +1,30 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { heroEllipsisHorizontal, heroEye, heroMap, heroChartBar, heroSparkles } from '@ng-icons/heroicons/outline';
+import { heroEllipsisHorizontal, heroEye, heroMap, heroChartBar, heroSparkles, heroTrash } from '@ng-icons/heroicons/outline';
 import { UserUploadsService } from './user-uploads.service';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription, interval } from 'rxjs';
+import { startWith, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-user-uploads',
   standalone: true,
   imports: [CommonModule, NgIconComponent],
   templateUrl: './user-uploads.component.html',
-  viewProviders: [provideIcons({ heroEllipsisHorizontal, heroEye, heroMap, heroChartBar, heroSparkles })]
+  viewProviders: [provideIcons({ heroEllipsisHorizontal, heroEye, heroMap, heroChartBar, heroSparkles, heroTrash })]
 })
-export class UserUploadsComponent implements OnInit {
+export class UserUploadsComponent implements OnInit, OnDestroy {
   @ViewChild('facialCanvas', { static: false }) facialCanvas!: ElementRef<HTMLCanvasElement>;
+
+  // UI and Action trigger states
+  isMenuOpen = false;
+  showDeleteConfirmModal = false;
+  isDeleting = false;
 
   // Scans list and loading states
   scansSummaryList: any[] = [];
+  private pollSubscription?: Subscription;
   selectedScanId: string | null = null;
   activeScanDetail: any = null;
   isLoading = false;
@@ -50,10 +59,26 @@ export class UserUploadsComponent implements OnInit {
   showDetections = true;
   private activeImage: HTMLImageElement | null = null;
 
-  constructor(private userUploadsService: UserUploadsService) {}
+  constructor(
+    private userUploadsService: UserUploadsService,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      const queryScanId = params['scanId'];
+      if (queryScanId) {
+        this.selectedScanId = queryScanId;
+        this.selectScan(queryScanId);
+      }
+    });
     this.loadScanSummaryFeed();
+  }
+
+  ngOnDestroy() {
+    if (this.pollSubscription) {
+      this.pollSubscription.unsubscribe();
+    }
   }
 
   // Helper getters
@@ -66,24 +91,29 @@ export class UserUploadsComponent implements OnInit {
   }
 
   /**
-   * Load the initial scan summary feed list.
+   * Load the scan summary feed list and set up real-time polling.
    */
   loadScanSummaryFeed() {
-    this.isListLoading = true;
-    this.userUploadsService.getScanSummaryFeed().subscribe({
-      next: (data) => {
-        this.scansSummaryList = data || [];
-        this.isListLoading = false;
-        if (this.scansSummaryList.length > 0) {
-          // Automatically select and load the first scan detail
-          this.selectScan(this.scansSummaryList[0].scanId || this.scansSummaryList[0].ScanId);
+    this.isListLoading = this.scansSummaryList.length === 0;
+    this.pollSubscription = interval(5000)
+      .pipe(
+        startWith(0),
+        switchMap(() => this.userUploadsService.getScanSummaryFeed())
+      )
+      .subscribe({
+        next: (data) => {
+          this.scansSummaryList = data || [];
+          this.isListLoading = false;
+          if (this.scansSummaryList.length > 0 && !this.selectedScanId) {
+            // Automatically select and load the first scan detail if none is selected
+            this.selectScan(this.scansSummaryList[0].scanId || this.scansSummaryList[0].ScanId);
+          }
+        },
+        error: (err) => {
+          console.error('Failed to load scan summary feed:', err);
+          this.isListLoading = false;
         }
-      },
-      error: (err) => {
-        console.error('Failed to load scan summary feed:', err);
-        this.isListLoading = false;
-      }
-    });
+      });
   }
 
   /**
@@ -99,6 +129,9 @@ export class UserUploadsComponent implements OnInit {
     Object.keys(this.layers).forEach(key => {
       this.layers[key as keyof typeof this.layers].active = false;
     });
+
+    this.activeImage = null;
+    this.clearCanvas();
 
     this.userUploadsService.getScanDetail(scanId).subscribe({
       next: (data) => {
@@ -146,7 +179,11 @@ export class UserUploadsComponent implements OnInit {
    * Loads the HTMLImageElement from the patient image URL and draws it on canvas.
    */
   initAndDrawCanvas() {
-    if (!this.patient.imageUrl) return;
+    if (!this.patient.imageUrl) {
+      this.activeImage = null;
+      this.clearCanvas();
+      return;
+    }
 
     // Defer execution using setTimeout to let Angular render the canvas element in the DOM
     setTimeout(() => {
@@ -176,7 +213,29 @@ export class UserUploadsComponent implements OnInit {
       canvas.height = img.naturalHeight || 480;
       this.drawCanvasLayers();
     };
+    img.onerror = () => {
+      console.error('Failed to load image:', this.patient.imageUrl);
+      this.activeImage = null;
+      this.clearCanvas();
+    };
     img.src = this.patient.imageUrl;
+  }
+
+  clearCanvas() {
+    if (this.facialCanvas) {
+      const canvas = this.facialCanvas.nativeElement;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        canvas.width = 640;
+        canvas.height = 480;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#9CA3AF'; // Tailwind text-gray-400
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('No Image Available', canvas.width / 2, canvas.height / 2);
+      }
+    }
   }
 
   /**
@@ -363,5 +422,63 @@ export class UserUploadsComponent implements OnInit {
       g: parseInt(result[2], 16),
       b: parseInt(result[3], 16)
     } : null;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    this.isMenuOpen = false;
+  }
+
+  toggleMenu(event: Event) {
+    event.stopPropagation();
+    this.isMenuOpen = !this.isMenuOpen;
+  }
+
+  triggerDelete(event: Event) {
+    event.stopPropagation();
+    this.isMenuOpen = false;
+    this.showDeleteConfirmModal = true;
+  }
+
+  cancelDelete() {
+    this.showDeleteConfirmModal = false;
+  }
+
+  confirmDelete() {
+    const deletedId = this.selectedScanId;
+    if (!deletedId) return;
+
+    this.isDeleting = true;
+    this.userUploadsService.deleteScan(deletedId).subscribe({
+      next: () => {
+        // Find index of the deleted item in the summary list
+        const deletedIdx = this.scansSummaryList.findIndex(s => (s.scanId || s.ScanId) === deletedId);
+        
+        // Remove from list
+        this.scansSummaryList = this.scansSummaryList.filter(s => (s.scanId || s.ScanId) !== deletedId);
+        
+        this.showDeleteConfirmModal = false;
+        this.isDeleting = false;
+
+        if (this.scansSummaryList.length > 0) {
+          // Find next available item slot
+          let nextIdx = deletedIdx;
+          if (nextIdx >= this.scansSummaryList.length) {
+            nextIdx = this.scansSummaryList.length - 1;
+          }
+          const nextScan = this.scansSummaryList[nextIdx];
+          const nextScanId = nextScan.scanId || nextScan.ScanId;
+          this.selectScan(nextScanId);
+        } else {
+          this.selectedScanId = null;
+          this.activeScanDetail = null;
+        }
+      },
+      error: (err) => {
+        console.error('Failed to delete scan:', err);
+        this.isDeleting = false;
+        alert('Failed to delete the scan record. Please try again.');
+      }
+    });
   }
 }

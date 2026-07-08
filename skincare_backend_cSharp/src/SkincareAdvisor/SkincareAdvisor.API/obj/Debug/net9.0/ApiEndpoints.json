@@ -17,6 +17,22 @@
   },
   {
     "ContainingType": "SkincareAdvisor.API.Controllers.AdminDashboardController",
+    "Method": "SoftDeleteScan",
+    "RelativePath": "api/AdminDashboard/scans/{scanId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "scanId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SkincareAdvisor.API.Controllers.AdminDashboardController",
     "Method": "GetAllScansSummary",
     "RelativePath": "api/AdminDashboard/scans/summary",
     "HttpMethod": "GET",
@@ -87,6 +103,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SkincareAdvisor.API.Controllers.SystemOverviewController",
+    "Method": "GetSystemDashboardMetrics",
+    "RelativePath": "api/SystemOverview/metrics",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   }
 ]

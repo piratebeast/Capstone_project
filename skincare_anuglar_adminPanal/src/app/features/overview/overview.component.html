@@ -5,10 +5,17 @@
       <h1 class="text-2xl font-bold text-gray-900">System Overview</h1>
       <p class="text-gray-500 mt-1 text-sm">Real-time metrics and diagnostic pipeline health.</p>
     </div>
-    <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full border border-green-200 font-medium text-xs">
-      <div class="w-2 h-2 rounded-full bg-green-500"></div>
-      System Operational
-    </div>
+    @if (metricsData?.modelStatus?.brain2 === 'Warning') {
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 rounded-full border border-red-200 font-medium text-xs">
+        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+        System Warning
+      </div>
+    } @else {
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full border border-green-200 font-medium text-xs">
+        <div class="w-2 h-2 rounded-full bg-green-500"></div>
+        System Operational
+      </div>
+    }
   </div>
 
   <!-- Metric Cards -->
@@ -19,7 +26,9 @@
         <span class="text-[11px] font-bold uppercase tracking-wider">Total Scans Today</span>
         <ng-icon name="heroArrowTrendingUp" class="text-[#004B8F] text-lg"></ng-icon>
       </div>
-      <div class="text-[32px] font-bold text-gray-900 leading-tight">14,285</div>
+      <div class="text-[32px] font-bold text-gray-900 leading-tight">
+        {{ metricsData ? (metricsData.totalScansToday | number) : '...' }}
+      </div>
       <div class="mt-2 text-[11px] font-semibold text-green-600 flex items-center gap-1">
         <ng-icon name="heroArrowTrendingUp"></ng-icon>
         +12.5% from yesterday
@@ -32,7 +41,9 @@
         <span class="text-[11px] font-bold uppercase tracking-wider">MediaPipe Fail-Fast</span>
         <ng-icon name="heroFunnel" class="text-gray-400 text-lg"></ng-icon>
       </div>
-      <div class="text-[32px] font-bold text-gray-900 leading-tight">4.2%</div>
+      <div class="text-[32px] font-bold text-gray-900 leading-tight">
+        {{ metricsData ? metricsData.mediaPipeFailFastRate + '%' : '...' }}
+      </div>
       <div class="mt-2 text-[11px] font-medium text-gray-500">Stage 1 Rejections</div>
     </div>
 
@@ -42,7 +53,9 @@
         <span class="text-[11px] font-bold uppercase tracking-wider">Avg Inference Latency</span>
         <ng-icon name="heroClock" class="text-[#004B8F] text-lg"></ng-icon>
       </div>
-      <div class="text-[32px] font-bold text-gray-900 leading-tight">245ms</div>
+      <div class="text-[32px] font-bold text-gray-900 leading-tight">
+        {{ metricsData ? metricsData.avgInferenceLatencyMs + 'ms' : '...' }}
+      </div>
       <div class="mt-2 text-[11px] font-semibold text-red-500 flex items-center gap-1">
         <span class="text-[10px]">▲</span> +15ms latency spike
       </div>
@@ -54,7 +67,9 @@
         <span class="text-[11px] font-bold uppercase tracking-wider">Active Sessions</span>
         <ng-icon name="heroUsers" class="text-gray-400 text-lg"></ng-icon>
       </div>
-      <div class="text-[32px] font-bold text-gray-900 leading-tight">1,842</div>
+      <div class="text-[32px] font-bold text-gray-900 leading-tight">
+        {{ metricsData ? (metricsData.activeSessionsApprox | number) : '...' }}
+      </div>
       <div class="mt-2 text-[11px] font-semibold text-green-600 flex items-center gap-1">
         <ng-icon name="heroCheckCircle"></ng-icon>
         Peak capacity at 65%
@@ -102,28 +117,39 @@
         </div>
       </div>
 
-      <!-- Brain 2 -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden">
-        <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+        @if (metricsData?.modelStatus?.brain2 === 'Warning') {
+          <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+        } @else {
+          <div class="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>
+        }
         <div class="flex justify-between items-start mb-4">
           <div>
             <h3 class="font-bold text-gray-900">Brain 2</h3>
             <p class="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mt-0.5">Recommendation Engine</p>
           </div>
-          <span class="px-2 py-0.5 bg-red-50 text-red-700 rounded text-[11px] font-semibold border border-red-200 flex items-center gap-1">
-            <ng-icon name="heroExclamationTriangle"></ng-icon> Warning
-          </span>
+          @if (metricsData?.modelStatus?.brain2 === 'Warning') {
+            <span class="px-2 py-0.5 bg-red-50 text-red-700 rounded text-[11px] font-semibold border border-red-200 flex items-center gap-1">
+              <ng-icon name="heroExclamationTriangle"></ng-icon> Warning
+            </span>
+          } @else {
+            <span class="px-2 py-0.5 bg-green-50 text-green-700 rounded text-[11px] font-semibold border border-green-200 flex items-center gap-1">
+              <ng-icon name="heroCheckCircle"></ng-icon> Optimal
+            </span>
+          }
         </div>
         <div class="w-full bg-gray-100 rounded-full h-1.5 mb-2.5">
-          <div class="bg-red-500 h-1.5 rounded-full" style="width: 82.1%"></div>
+          <div [class]="metricsData?.modelStatus?.brain2 === 'Warning' ? 'bg-red-500 h-1.5 rounded-full' : 'bg-[#81C784] h-1.5 rounded-full'" [style.width.%]="metricsData ? 82.1 : 0"></div>
         </div>
         <div class="flex justify-between text-xs text-gray-500 font-medium mb-3">
           <span>Confidence: <span class="text-gray-800">82.1%</span></span>
           <span>Latency: <span class="text-gray-800">180ms</span></span>
         </div>
-        <div class="text-[11px] text-red-600 font-semibold italic">
-          Threshold degraded in last 2h.
-        </div>
+        @if (metricsData?.modelStatus?.brain2 === 'Warning') {
+          <div class="text-[11px] text-red-600 font-semibold italic">
+            Threshold degraded in last 2h.
+          </div>
+        }
       </div>
     </div>
   </div>
@@ -137,23 +163,23 @@
         <div class="flex items-center text-sm">
           <span class="w-24 text-gray-700 font-medium">Acne</span>
           <div class="flex-1 mx-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div class="h-full bg-[#004B8F] rounded-full" style="width: 45%"></div>
+            <div class="h-full bg-[#004B8F] rounded-full" [style.width.%]="metricsData ? metricsData.topDiagnosticFindings.acne : 45"></div>
           </div>
-          <span class="w-10 text-right text-gray-500 font-medium text-xs">45%</span>
+          <span class="w-10 text-right text-gray-500 font-medium text-xs">{{ metricsData ? metricsData.topDiagnosticFindings.acne : 45 }}%</span>
         </div>
         <div class="flex items-center text-sm">
           <span class="w-24 text-gray-700 font-medium">Erythema</span>
           <div class="flex-1 mx-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div class="h-full bg-[#3B82F6] rounded-full" style="width: 25%"></div>
+            <div class="h-full bg-[#3B82F6] rounded-full" [style.width.%]="metricsData ? metricsData.topDiagnosticFindings.erythema : 25"></div>
           </div>
-          <span class="w-10 text-right text-gray-500 font-medium text-xs">25%</span>
+          <span class="w-10 text-right text-gray-500 font-medium text-xs">{{ metricsData ? metricsData.topDiagnosticFindings.erythema : 25 }}%</span>
         </div>
         <div class="flex items-center text-sm">
           <span class="w-24 text-gray-700 font-medium">Melasma</span>
           <div class="flex-1 mx-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div class="h-full bg-[#93C5FD] rounded-full" style="width: 15%"></div>
+            <div class="h-full bg-[#93C5FD] rounded-full" [style.width.%]="metricsData ? metricsData.topDiagnosticFindings.melasma : 15"></div>
           </div>
-          <span class="w-10 text-right text-gray-500 font-medium text-xs">15%</span>
+          <span class="w-10 text-right text-gray-500 font-medium text-xs">{{ metricsData ? metricsData.topDiagnosticFindings.melasma : 15 }}%</span>
         </div>
         <div class="flex items-center text-sm">
           <span class="w-24 text-gray-700 font-medium">Rosacea</span>
@@ -173,42 +199,41 @@
     </div>
 
     <!-- Recent Activity -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
-        <a href="#" class="text-[#004B8F] text-[13px] font-bold hover:underline flex items-center gap-1 uppercase tracking-wide">
-          View All Feed <ng-icon name="heroArrowRight"></ng-icon>
-        </a>
-      </div>
-      
-      <div class="space-y-5">
-        <!-- Feed Item 1 -->
-        <div class="flex gap-4 items-start border-b border-gray-100 pb-5">
-          <div class="w-12 h-12 rounded overflow-hidden bg-gray-200 flex-shrink-0">
-            <!-- Simulated thumbnail -->
-            <div class="w-full h-full bg-gradient-to-br from-[#eebfb9] to-[#d47f72]"></div>
-          </div>
-          <div class="flex-1">
-            <div class="flex justify-between items-start">
-              <h4 class="font-bold text-gray-900 text-sm">Scan #88392</h4>
-              <span class="text-xs text-gray-400 font-medium">2 min ago</span>
-            </div>
-            <p class="text-sm text-gray-600 mt-1 leading-relaxed">AI Detection: Primary concern flagged as <span class="font-bold text-gray-900">Severe Acne</span>. Confidence: 94%.</p>
-          </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+      <div>
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
+          <a routerLink="/user-uploads" class="text-[#004B8F] text-[13px] font-bold hover:underline flex items-center gap-1 uppercase tracking-wide">
+            View All Feed <ng-icon name="heroArrowRight"></ng-icon>
+          </a>
         </div>
-
-        <!-- Feed Item 2 -->
-        <div class="flex gap-4 items-start">
-          <div class="w-12 h-12 rounded border border-red-200 bg-red-50 flex-shrink-0 flex items-center justify-center text-red-500">
-             <ng-icon name="heroExclamationTriangle" class="text-2xl"></ng-icon>
-          </div>
-          <div class="flex-1">
-            <div class="flex justify-between items-start">
-              <h4 class="font-bold text-gray-900 text-sm">Scan #88391 - Rejected</h4>
-              <span class="text-xs text-gray-400 font-medium">15 min ago</span>
+        
+        <div class="space-y-5">
+          @if (recentScans.length === 0) {
+            <div class="py-8 text-center text-gray-400 text-sm font-medium">
+              No recent scans found.
             </div>
-            <p class="text-sm text-gray-600 mt-1 leading-relaxed">MediaPipe validation failed: Image too blurry or face not detected clearly.</p>
-          </div>
+          } @else {
+            @for (scan of recentScans; track scan.scanId; let last = $last) {
+              <button 
+                (click)="navigateToScan(scan.scanId)"
+                [class]="'w-full flex gap-4 items-start text-left hover:bg-gray-50/50 p-2.5 -mx-2.5 rounded-lg transition-colors ' + (last ? '' : 'border-b border-gray-100 pb-5')"
+              >
+                <div class="w-12 h-12 rounded overflow-hidden bg-gray-200 flex-shrink-0">
+                  <div class="w-full h-full bg-gradient-to-br from-[#eebfb9] to-[#d47f72]"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex justify-between items-start">
+                    <h4 class="font-bold text-gray-900 text-sm truncate">Scan #{{ scan.scanId.substring(0, 8) }}</h4>
+                    <span class="text-xs text-gray-400 font-medium whitespace-nowrap ml-2">{{ formatScanDate(scan.scanDate) }}</span>
+                  </div>
+                  <p class="text-sm text-gray-600 mt-1 leading-relaxed truncate">
+                    AI Detection: Primary concern flagged as <span class="font-bold text-gray-900 capitalize">{{ scan.routineClass }}</span>. Confidence: {{ (scan.confidence * 100).toFixed(0) }}%.
+                  </p>
+                </div>
+              </button>
+            }
+          }
         </div>
       </div>
     </div>

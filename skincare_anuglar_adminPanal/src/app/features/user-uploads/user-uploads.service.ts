@@ -61,4 +61,29 @@ export class UserUploadsService {
       })
     );
   }
+
+  /**
+   * Dispatches an HTTP DELETE request to delete a specific scan record.
+   */
+  deleteScan(scanId: string): Observable<any> {
+    return this.ensureAuthenticated().pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+        return this.http.delete<any>(`${this.baseUrl}/AdminDashboard/scans/${scanId}`, { headers });
+      })
+    );
+  }
+
+  /**
+   * Fetches telemetry dashboard metrics from the backend.
+   */
+  getSystemOverviewMetrics(): Observable<any> {
+    return this.ensureAuthenticated().pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+        return this.http.get<any>(`${this.baseUrl}/SystemOverview/metrics`, { headers });
+      })
+    );
+  }
 }
+

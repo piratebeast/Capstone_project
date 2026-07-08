@@ -1,4 +1,9 @@
-﻿using System.Security.Claims;
+﻿using System;
+using System.Diagnostics; // <-- REQUIRED FOR HIGH-PRECISION STOPWATCH TIMING
+using System.IO;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -6,22 +11,19 @@ using Microsoft.EntityFrameworkCore;
 using SkincareAdvisor.Application.DTOs;
 using SkincareAdvisor.Application.Interfaces;
 using SkincareAdvisor.Domain.Entities;
-using SkincareAdvisor.Infrastructure; // Assuming your ApplicationDbContext is here
 using SkincareAdvisor.Infrastructure.Persistence;
 
 namespace SkincareAdvisor.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]// Ensure that only authenticated users can access this controller
-    [EnableRateLimiting("api-policy")] // Apply the rate limiting policy defined in Program.cs
-
+    [Authorize]
+    [EnableRateLimiting("api-policy")]
     public class ScanController : ControllerBase
     {
         private readonly IScanService _scanService;
         private readonly ApplicationDbContext _context;
 
-        // Inject both the ScanService and the Database Context
         public ScanController(IScanService scanService, ApplicationDbContext context)
         {
             _scanService = scanService;
@@ -34,13 +36,22 @@ namespace SkincareAdvisor.API.Controllers
             if (request.image == null || request.image.Length == 0)
                 return BadRequest("No image was uploaded.");
 
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User is not authenticated.");
+
+            // Initialize background telemetry tracking logs framework
+            var stopwatch = new Stopwatch();
+            var performanceLog = new SystemPerformanceLog
+            {
+                UserId = userId,
+                Timestamp = DateTime.UtcNow,
+                Endpoint = "api/Scan/analyze"
+            };
+
             try
             {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized("User is not authenticated.");
-
-                // 1. Calculate Age (Keep your precise age deduction logic block)
+                // 1. Calculate Age
                 var user = await _context.Users.FindAsync(userId);
                 int calculatedAge = 25;
                 if (user != null && user.DateOfBirth.HasValue)
@@ -52,12 +63,8 @@ namespace SkincareAdvisor.API.Controllers
                     if (calculatedAge <= 0) { calculatedAge = 25; }
                 }
 
-                // ===================================================================
-                // 2. NEW LOGIC: PERMANENTLY SAVE THE ORIGINAL IMAGE FILE TO DISK
-                // ===================================================================
+                // 2. Permanently Save the Original Image File to Disk
                 var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(request.image.FileName)}";
-
-                // Target physical path pointing into the wwwroot folder assets deployment map
                 var targetStorageFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "scans");
                 if (!Directory.Exists(targetStorageFolder))
                 {
@@ -65,25 +72,23 @@ namespace SkincareAdvisor.API.Controllers
                 }
 
                 var fullPhysicalWritePath = Path.Combine(targetStorageFolder, uniqueFileName);
-
-                // Stream copy the bytes straight out of memory to write to disk
                 using (var fileStream = new FileStream(fullPhysicalWritePath, FileMode.Create))
                 {
                     await request.image.CopyToAsync(fileStream);
                 }
 
-                // Web address relative pointer url path string stored into the relational row
                 var savedWebImageUrl = $"/uploads/scans/{uniqueFileName}";
-                // ===================================================================
 
-                // 3. Call the Python FastAPI Server 
+                // 3. START TIMING: Call the Python FastAPI Server 
+                stopwatch.Start();
                 AiScanResponse aiResult = await _scanService.AnalyzeImageAsync(request.image, calculatedAge);
+                stopwatch.Stop();
 
                 // 4. Map the Extended DTO into our Database Entity
                 var scanHistory = new ScanHistory
                 {
                     UserId = userId,
-                    ImageUrl = savedWebImageUrl, // <-- Save file reference link string
+                    ImageUrl = savedWebImageUrl,
                     Acne = aiResult.Diagnostics.Acne,
                     DarkSpots = aiResult.Diagnostics.DarkSpots,
                     Wrinkles = aiResult.Diagnostics.Wrinkles,
@@ -93,7 +98,6 @@ namespace SkincareAdvisor.API.Controllers
                     RoutineClass = aiResult.RoutineClass,
                     Confidence = aiResult.Confidence,
 
-                    // NEW: Maps the in-memory matrix list channels through our Value Converter backings
                     AcneHeatmap = aiResult.Heatmaps.Acne,
                     DarkSpotsHeatmap = aiResult.Heatmaps.DarkSpots,
                     WrinklesHeatmap = aiResult.Heatmaps.Wrinkles,
@@ -122,8 +126,13 @@ namespace SkincareAdvisor.API.Controllers
                     }).ToList()
                 };
 
-                // 5. Save Transaction directly inside SQL Server
+                // Append successful analytics states
+                performanceLog.InferenceLatencyMs = (int)stopwatch.ElapsedMilliseconds;
+                performanceLog.IsSuccess = true;
+
+                // 5. Save both histories and telemetry blocks simultaneously
                 _context.ScanHistories.Add(scanHistory);
+                _context.SystemPerformanceLogs.Add(performanceLog);
                 await _context.SaveChangesAsync();
 
                 return Ok(new
@@ -134,26 +143,47 @@ namespace SkincareAdvisor.API.Controllers
                     {
                         Diagnostics = aiResult.Diagnostics,
                         Confidence = aiResult.Confidence,
-                        ImageUrl = savedWebImageUrl // Ships the reference URL directly back to your client apps
+                        ImageUrl = savedWebImageUrl
                     }
                 });
             }
+            // Catch MediaPipe Specific Fail-Fast Rejections
             catch (ArgumentException ex)
             {
+                stopwatch.Stop();
+
+                performanceLog.InferenceLatencyMs = (int)stopwatch.ElapsedMilliseconds;
+                performanceLog.IsSuccess = false;
+                performanceLog.FailureReason = ex.Message.Contains("Multiple")
+                    ? "MULTIPLE_FACES_DETECTED"
+                    : "NO_FACE_DETECTED";
+
+                _context.SystemPerformanceLogs.Add(performanceLog);
+                await _context.SaveChangesAsync(); // Saves the metric to feed your 4.2% dashboard graph
+
                 return BadRequest(new { Error = "Invalid Image", Message = ex.Message });
             }
+            // Catch Generic System Failures (Python Offline, Network dropped, etc.)
             catch (Exception ex)
             {
+                stopwatch.Stop();
+
+                performanceLog.InferenceLatencyMs = (int)stopwatch.ElapsedMilliseconds;
+                performanceLog.IsSuccess = false;
+                performanceLog.FailureReason = "SERVER_ERROR";
+
+                _context.SystemPerformanceLogs.Add(performanceLog);
+                await _context.SaveChangesAsync();
+
                 return StatusCode(500, $"An error occurred during analysis: {ex.Message}");
             }
         }
 
-        [HttpGet("routine/{scanId}")] // URL will be: api/Scan/routine/00d73612...
+        [HttpGet("routine/{scanId}")]
         public async Task<IActionResult> GetSpecificRoutine(Guid scanId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Find the EXACT scan by ID and ensure it belongs to this user
             var scan = await _context.ScanHistories
                 .FirstOrDefaultAsync(s => s.Id == scanId && s.UserId == userId);
 

@@ -89,5 +89,37 @@ namespace SkincareAdvisor.API.Controllers
 
             return Ok(summaryList);
         }
+
+        /// <summary>
+        /// Soft-deletes a specific scan diagnostic profile from the administration feed.
+        /// URL Endpoint: DELETE api/AdminDashboard/scans/{scanId}
+        /// </summary>
+        [HttpDelete("scans/{scanId}")]
+        public async Task<IActionResult> SoftDeleteScan(Guid scanId)
+        {
+            // Note: Since global query filters are active, we use IgnoreQueryFilters() 
+            // in case we need to locate a record that has already been toggled.
+            var scan = await _context.ScanHistories
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(s => s.Id == scanId);
+
+            if (scan == null)
+            {
+                return NotFound(new { Message = "The requested diagnostic record does not exist." });
+            }
+
+            if (scan.IsDeleted)
+            {
+                return BadRequest(new { Message = "This scan record has already been deleted." });
+            }
+
+            // Apply soft delete flag swap
+            scan.IsDeleted = true;
+
+            _context.ScanHistories.Update(scan);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = $"Scan record {scanId} soft-deleted successfully." });
+        }
     }
 }

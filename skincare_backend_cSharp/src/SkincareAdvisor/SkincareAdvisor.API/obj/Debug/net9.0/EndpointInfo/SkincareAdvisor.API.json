@@ -26,6 +26,27 @@
             "description": "OK"
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "AdminDashboard"
+        ],
+        "parameters": [
+          {
+            "name": "scanId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/AdminDashboard/scans/summary": {
@@ -149,6 +170,18 @@
               "format": "uuid"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/SystemOverview/metrics": {
+      "get": {
+        "tags": [
+          "SystemOverview"
         ],
         "responses": {
           "200": {

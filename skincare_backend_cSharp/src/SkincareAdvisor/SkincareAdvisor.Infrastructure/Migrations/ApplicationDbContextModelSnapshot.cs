@@ -235,6 +235,42 @@ namespace SkincareAdvisor.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("SkincareAdvisor.Domain.Entities.ScanCritique", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CritiqueText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModelUsed")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RawResponseJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ScanHistoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Succeeded")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScanHistoryId");
+
+                    b.ToTable("ScanCritiques");
+                });
+
             modelBuilder.Entity("SkincareAdvisor.Domain.Entities.ScanHistory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -385,6 +421,17 @@ namespace SkincareAdvisor.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SkincareAdvisor.Domain.Entities.ScanCritique", b =>
+                {
+                    b.HasOne("SkincareAdvisor.Domain.Entities.ScanHistory", "ScanHistory")
+                        .WithMany()
+                        .HasForeignKey("ScanHistoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ScanHistory");
                 });
 
             modelBuilder.Entity("SkincareAdvisor.Domain.Entities.ScanHistory", b =>

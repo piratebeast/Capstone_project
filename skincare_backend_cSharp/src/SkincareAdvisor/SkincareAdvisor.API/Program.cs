@@ -1,4 +1,5 @@
-using System.Security.Claims; // <-- NEW: Explicitly needed for ClaimTypes.Role mapping
+using DotNetEnv;
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -10,27 +11,27 @@ using SkincareAdvisor.Domain.Entities;
 using SkincareAdvisor.Infrastructure.Persistence;
 using SkincareAdvisor.Infrastructure.Services;
 
+Env.Load(); // load .env FIRST, before builder reads config
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Configuration.AddEnvironmentVariables();
 
-// 1. Setup Database Connection
+// 1. Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Setup ASP.NET Identity (Now using RoleManager configurations behind the scenes)
+// 2. Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-// 3. Setup JWT Authentication Service 
+// 3. JWT
 var jwtKey = builder.Configuration["JwtSettings:Key"]
              ?? builder.Configuration["JwtSettings__Key"];
 
 if (string.IsNullOrEmpty(jwtKey))
-{
     throw new Exception("CRITICAL ERROR: JWT Secret Key is missing from configuration.");
-}
 
 builder.Services.AddAuthentication(options =>
 {
@@ -46,52 +47,38 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-
-        // ===================================================================
-        // CRITICAL ADDITION FOR ADMIN PANEL SECURITY
-        // ===================================================================
-        // Maps incoming identity role schema attributes to the [Authorize(Roles = "Admin")] analyzer
         RoleClaimType = ClaimTypes.Role
-        // ===================================================================
     };
 });
 
 builder.Services.AddCors();
 builder.Services.AddControllers();
-
-// Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 4. Dependency Injection Mapping
+// 4. DI registrations (FIXED: Registered cleanly as Scoped instead of HttpClient wrapper)
 builder.Services.AddScoped<IAuthService, AuthService>();
-
-// Handles the HttpClient pooling automatically for your FastAPI connector!
+builder.Services.AddHttpClient<IScanCritiqueService, ScanCritiqueService>();
 builder.Services.AddHttpClient<IScanService, ScanService>();
 
-// Api Rates Limiting Configuration
+// 5. Rate limiting
 builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("api-policy", opt =>
     {
         opt.Window = TimeSpan.FromMinutes(1);
-        opt.PermitLimit = 10; // Allow 10 scans per minute
-        opt.QueueLimit = 2;   // Queue 2 extra if they are just slightly over
+        opt.PermitLimit = 10;
+        opt.QueueLimit = 2;
     });
 });
 
-
 var app = builder.Build();
 
-// ===================================================================
-// NEW: EXECUTE IDENTITY INITIALIZATION DATA SEEDING AT STARTUP
-// ===================================================================
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        // Invoke our static manager mapping loop asynchronously
         await SkincareAdvisor.Infrastructure.Persistence.IdentityDataSeeder.SeedAdminUserAsync(services);
     }
     catch (Exception ex)
@@ -100,9 +87,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An initialization error struck the database migration seed system.");
     }
 }
-// ===================================================================
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -120,17 +105,10 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-// 5. Middleware Order (CRITICAL)
 app.UseRouting();
 app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
-
-// Apply the rate limiter BEFORE authentication and authorization to prevent system abuse
 app.UseRateLimiter();
-
-// Authentication MUST come before Authorization
-app.UseAuthentication(); // Decodes the JWT token passport and extracts claims/roles
-app.UseAuthorization();  // Decides if the active token role possesses permission targets
-
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
-
 app.Run();

@@ -21,6 +21,7 @@ namespace SkincareAdvisor.Infrastructure.Persistence
         }
 
         public DbSet<ScanHistory> ScanHistories { get; set; }
+        public DbSet<ScanCritique> ScanCritiques { get; set; }
         public DbSet<SystemPerformanceLog> SystemPerformanceLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -40,8 +41,11 @@ namespace SkincareAdvisor.Infrastructure.Persistence
             ConfigureHeatmapConverter(builder, nameof(ScanHistory.RednessHeatmap));
             ConfigureHeatmapConverter(builder, nameof(ScanHistory.DarkCirclesHeatmap));
 
-            // NEW: Global filter - automatically excludes soft-deleted rows from all queries
+            // Global filter - automatically excludes soft-deleted rows from all queries
             builder.Entity<ScanHistory>().HasQueryFilter(s => !s.IsDeleted);
+
+            // Matching filter so ScanCritique respects its parent ScanHistory's soft-delete state
+            builder.Entity<ScanCritique>().HasQueryFilter(c => !c.ScanHistory!.IsDeleted);
         }
 
         /// <summary>

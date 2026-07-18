@@ -31,7 +31,11 @@
         "frameworks": {
           "net9.0": {
             "targetAlias": "net9.0",
-            "projectReferences": {}
+            "projectReferences": {
+              "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Domain\\SkincareAdvisor.Domain.csproj": {
+                "projectPath": "D:\\code\\Capstone_project\\skincare_backend_cSharp\\src\\SkincareAdvisor\\SkincareAdvisor.Domain\\SkincareAdvisor.Domain.csproj"
+              }
+            }
           }
         },
         "warningProperties": {
@@ -196,6 +200,10 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "DotNetEnv": {
+              "target": "Package",
+              "version": "[3.2.0, )"
+            },
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
               "target": "Package",
               "version": "[9.0.15, )"

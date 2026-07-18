@@ -5,20 +5,23 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SkincareAdvisor.Infrastructure.Persistence;
+using SkincareAdvisor.Application.Interfaces;
+using SkincareAdvisor.Domain.Entities;
 
 namespace SkincareAdvisor.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    // Lock this entire controller down to identities possessing the verified Admin token claim
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")] // Lock this entire controller down to identities possessing the verified Admin token claim
     public class AdminDashboardController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IScanCritiqueService _critiqueService;
 
-        public AdminDashboardController(ApplicationDbContext context)
+        public AdminDashboardController(ApplicationDbContext context, IScanCritiqueService critiqueService)
         {
             _context = context;
+            _critiqueService = critiqueService;
         }
 
         /// <summary>
@@ -28,7 +31,6 @@ namespace SkincareAdvisor.API.Controllers
         [HttpGet("scans/{scanId}")]
         public async Task<IActionResult> GetScanDetailForAdmin(Guid scanId)
         {
-            // Pull the exact scan record from SQL Server
             var scan = await _context.ScanHistories
                 .FirstOrDefaultAsync(s => s.Id == scanId);
 
@@ -37,7 +39,12 @@ namespace SkincareAdvisor.API.Controllers
                 return NotFound(new { Message = "The requested diagnostic record does not exist." });
             }
 
-            // Return the complete mapping properties contract directly down the wire to Angular
+            // NEW: pull the latest critique for this scan
+            var latestCritique = await _context.ScanCritiques
+                .Where(c => c.ScanHistoryId == scanId)
+                .OrderByDescending(c => c.GeneratedAt)
+                .FirstOrDefaultAsync();
+
             return Ok(new
             {
                 ScanId = scan.Id,
@@ -45,7 +52,7 @@ namespace SkincareAdvisor.API.Controllers
                 ScanDate = scan.ScanDate,
                 RoutineClass = scan.RoutineClass,
                 Confidence = scan.Confidence,
-                OriginalImageUrl = scan.ImageUrl, // Web relative URL file path for Layer 1 drawing
+                OriginalImageUrl = scan.ImageUrl,
                 Diagnostics = new
                 {
                     Acne = scan.Acne,
@@ -57,13 +64,16 @@ namespace SkincareAdvisor.API.Controllers
                 },
                 Heatmaps = new
                 {
-                    // EF Core custom Value Converters automatically split the strings back into float lists here!
-                    Acne = scan.AcneHeatmap,        // Flat array of 50,176 elements
-                    DarkSpots = scan.DarkSpotsHeatmap,  // Flat array of 50,176 elements
-                    Wrinkles = scan.WrinklesHeatmap,    // Flat array of 50,176 elements
-                    Redness = scan.RednessHeatmap,      // Flat array of 50,176 elements
-                    DarkCircles = scan.DarkCirclesHeatmap // Flat array of 50,176 elements
-                }
+                    Acne = scan.AcneHeatmap,
+                    DarkSpots = scan.DarkSpotsHeatmap,
+                    Wrinkles = scan.WrinklesHeatmap,
+                    Redness = scan.RednessHeatmap,
+                    DarkCircles = scan.DarkCirclesHeatmap
+                },
+                // NEW: expose critique so the frontend can hydrate on load/refresh
+                AiCritique = latestCritique?.CritiqueText,
+                AiCritiqueSucceeded = latestCritique?.Succeeded,
+                AiCritiqueGeneratedAt = latestCritique?.GeneratedAt
             });
         }
 
@@ -83,11 +93,79 @@ namespace SkincareAdvisor.API.Controllers
                     ScanDate = s.ScanDate,
                     RoutineClass = s.RoutineClass,
                     Confidence = s.Confidence,
-                    PrimaryConditionSeverity = s.Acne // Easily extendable for reporting tables
+                    PrimaryConditionSeverity = s.Acne,
+                    // NEW: latest critique text + success flag, computed inline (EF translates this to SQL, no N+1)
+                    AiCritique = _context.ScanCritiques
+                        .Where(c => c.ScanHistoryId == s.Id)
+                        .OrderByDescending(c => c.GeneratedAt)
+                        .Select(c => c.CritiqueText)
+                        .FirstOrDefault(),
+                    AiCritiqueSucceeded = _context.ScanCritiques
+                        .Where(c => c.ScanHistoryId == s.Id)
+                        .OrderByDescending(c => c.GeneratedAt)
+                        .Select(c => (bool?)c.Succeeded)
+                        .FirstOrDefault()
                 })
                 .ToListAsync();
 
             return Ok(summaryList);
+        }
+
+        /// <summary>
+        /// Generates (or regenerates) an AI critique for a scan and stores it.
+        /// URL Endpoint: POST api/AdminDashboard/scans/{scanId}/critique
+        /// </summary>
+        [HttpPost("scans/{scanId}/critique")]
+        public async Task<IActionResult> GenerateCritique(Guid scanId)
+        {
+            var scan = await _context.ScanHistories
+                .FirstOrDefaultAsync(s => s.Id == scanId);
+
+            if (scan == null)
+                return NotFound(new { Message = "The requested diagnostic record does not exist." });
+
+            var critique = await _critiqueService.GenerateCritiqueAsync(scan);
+
+            _context.ScanCritiques.Add(critique);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                critique.Id,
+                critique.ScanHistoryId,
+                critique.ModelUsed,
+                critique.CritiqueText,
+                critique.Succeeded,
+                critique.ErrorMessage,
+                critique.GeneratedAt
+            });
+        }
+
+        /// <summary>
+        /// Fetches the most recent stored critique for a scan, without calling Gemini again.
+        /// URL Endpoint: GET api/AdminDashboard/scans/{scanId}/critique
+        /// </summary>
+        [HttpGet("scans/{scanId}/critique")]
+        public async Task<IActionResult> GetCritique(Guid scanId)
+        {
+            var critique = await _context.ScanCritiques
+                .Where(c => c.ScanHistoryId == scanId)
+                .OrderByDescending(c => c.GeneratedAt)
+                .FirstOrDefaultAsync();
+
+            if (critique == null)
+                return NotFound(new { Message = "No critique has been generated for this scan yet." });
+
+            return Ok(new
+            {
+                critique.Id,
+                critique.ScanHistoryId,
+                critique.ModelUsed,
+                critique.CritiqueText,
+                critique.Succeeded,
+                critique.ErrorMessage,
+                critique.GeneratedAt
+            });
         }
 
         /// <summary>

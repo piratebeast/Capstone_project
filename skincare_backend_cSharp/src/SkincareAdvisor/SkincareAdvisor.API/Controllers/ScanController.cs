@@ -23,11 +23,13 @@ namespace SkincareAdvisor.API.Controllers
     {
         private readonly IScanService _scanService;
         private readonly ApplicationDbContext _context;
+        private readonly IScanCritiqueService _scanCritiqueService;
 
-        public ScanController(IScanService scanService, ApplicationDbContext context)
+        public ScanController(IScanService scanService, ApplicationDbContext context, IScanCritiqueService scanCritiqueService)
         {
             _scanService = scanService;
             _context = context;
+            _scanCritiqueService = scanCritiqueService; 
         }
 
         [HttpPost("analyze")]
@@ -133,6 +135,13 @@ namespace SkincareAdvisor.API.Controllers
                 // 5. Save both histories and telemetry blocks simultaneously
                 _context.ScanHistories.Add(scanHistory);
                 _context.SystemPerformanceLogs.Add(performanceLog);
+                await _context.SaveChangesAsync();
+
+                // NEW: Inject IScanCritiqueService into your constructor, then execute:
+                var critiqueResult = await _scanCritiqueService.GenerateCritiqueAsync(scanHistory);
+                _context.ScanCritiques.Add(critiqueResult);
+
+                // Keep your existing save and return block:
                 await _context.SaveChangesAsync();
 
                 return Ok(new

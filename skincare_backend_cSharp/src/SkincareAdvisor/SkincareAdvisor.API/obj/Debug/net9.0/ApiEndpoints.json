@@ -33,6 +33,38 @@
   },
   {
     "ContainingType": "SkincareAdvisor.API.Controllers.AdminDashboardController",
+    "Method": "GenerateCritique",
+    "RelativePath": "api/AdminDashboard/scans/{scanId}/critique",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "scanId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SkincareAdvisor.API.Controllers.AdminDashboardController",
+    "Method": "GetCritique",
+    "RelativePath": "api/AdminDashboard/scans/{scanId}/critique",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "scanId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SkincareAdvisor.API.Controllers.AdminDashboardController",
     "Method": "GetAllScansSummary",
     "RelativePath": "api/AdminDashboard/scans/summary",
     "HttpMethod": "GET",

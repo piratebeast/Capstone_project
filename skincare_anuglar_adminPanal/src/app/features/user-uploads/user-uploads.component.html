@@ -298,14 +298,57 @@
             
             <!-- Right Column: AI Model Critique -->
             <div class="flex flex-col pt-2 justify-start h-full">
-              <div class="bg-[#F8FAFC] border border-gray-200 rounded-xl p-5 relative h-full min-h-[160px] flex flex-col justify-start">
-                <div class="absolute -top-[11px] left-4 bg-white px-2.5 py-0.5 border border-gray-200 rounded-full flex items-center gap-1.5 shadow-sm">
+              <div class="bg-[#F8FAFC] border border-gray-200 rounded-xl p-5 relative h-full min-h-[160px] flex flex-col justify-start overflow-hidden">
+                <div class="absolute -top-[11px] left-4 bg-white px-2.5 py-0.5 border border-gray-200 rounded-full flex items-center gap-1.5 shadow-sm z-20">
                   <ng-icon name="heroSparkles" class="text-[#004B8F] text-[10px]"></ng-icon>
                   <span class="text-[10px] font-bold text-[#004B8F] uppercase tracking-widest">AI Model Critique</span>
                 </div>
-                <p class="text-xs text-gray-700 leading-relaxed pt-2">
-                  Face analyzed via MediaPipe. Feature extraction successful for class <strong class="text-gray-900 font-bold capitalize">{{ activeScanDetail?.routineClass }}</strong> with a diagnostic baseline scalar of <strong class="text-gray-900 font-bold">{{ globalConfidence.toFixed(2) }}%</strong>. Heatmap proposals align with visual regional clusters.
-                </p>
+
+                <!-- Subtle Loading Spinner Overlay Backdrop -->
+                @if (isCritiqueLoading) {
+                  <div class="absolute inset-0 bg-[#F8FAFC]/85 backdrop-blur-[2px] z-30 flex flex-col items-center justify-center gap-2.5">
+                    <div class="w-6 h-6 border-2 border-[#004B8F] border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest animate-pulse">Running Clinical Audit...</span>
+                  </div>
+                }
+
+                <div class="pt-2 flex-1 flex flex-col justify-center">
+                  @if (activeScanDetail?.aiCritique || activeScanDetail?.AiCritique) {
+                    <!-- Populated Critique Text -->
+                    <div [innerHTML]="getStructuredCritiqueHtml(activeScanDetail.aiCritique || activeScanDetail.AiCritique)"></div>
+                  } @else if (critiqueError) {
+                    <!-- Error State Panel -->
+                    <div class="flex flex-col items-center justify-center text-center p-4 border border-red-200 bg-red-50/50 rounded-lg gap-3">
+                      <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-[#EF4444]">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+                      </div>
+                      <div class="flex flex-col gap-1">
+                        <span class="text-[10px] font-bold text-red-700 uppercase tracking-wider">Audit Verification Failed</span>
+                        <p class="text-xs text-[#EF4444] font-medium leading-normal">{{ critiqueError }}</p>
+                      </div>
+                      <button 
+                        (click)="runAiCritique()"
+                        class="px-3.5 py-1.5 bg-[#EF4444] hover:bg-red-700 text-white rounded text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm focus:outline-none"
+                      >
+                        Retry Audit
+                      </button>
+                    </div>
+                  } @else {
+                    <!-- Run Verification CTA -->
+                    <div class="flex flex-col items-center justify-center text-center p-2 gap-4">
+                      <p class="text-xs text-gray-500 leading-relaxed">
+                        Clinical AI Critique feedback is not generated for this scan yet. Trigger a clinical audit run using Google AI Studio.
+                      </p>
+                      <button 
+                        (click)="runAiCritique()"
+                        class="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white border border-gray-900 rounded-lg text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 tracking-wide uppercase shadow-md focus:outline-none"
+                      >
+                        <ng-icon name="heroSparkles" class="text-white text-sm"></ng-icon>
+                        Run AI Audit Verification
+                      </button>
+                    </div>
+                  }
+                </div>
               </div>
             </div>
 

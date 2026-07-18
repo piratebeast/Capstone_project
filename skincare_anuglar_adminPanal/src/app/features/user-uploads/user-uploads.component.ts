@@ -21,6 +21,8 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
   isMenuOpen = false;
   showDeleteConfirmModal = false;
   isDeleting = false;
+  isCritiqueLoading = false;
+  critiqueError: string | null = null;
 
   // Scans list and loading states
   scansSummaryList: any[] = [];
@@ -102,7 +104,16 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (data) => {
-          this.scansSummaryList = data || [];
+          const oldList = this.scansSummaryList;
+          this.scansSummaryList = (data || []).map((newScan: any) => {
+            const newId = newScan.scanId || newScan.ScanId;
+            const existing = oldList.find(s => (s.scanId || s.ScanId) === newId);
+            if (existing && (existing.aiCritique || existing.AiCritique)) {
+              newScan.aiCritique = existing.aiCritique || existing.AiCritique;
+              newScan.AiCritique = existing.aiCritique || existing.AiCritique;
+            }
+            return newScan;
+          });
           this.isListLoading = false;
           if (this.scansSummaryList.length > 0 && !this.selectedScanId) {
             // Automatically select and load the first scan detail if none is selected
@@ -130,6 +141,9 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
       this.layers[key as keyof typeof this.layers].active = false;
     });
 
+    this.isCritiqueLoading = false;
+    this.critiqueError = null;
+
     this.activeImage = null;
     this.clearCanvas();
 
@@ -137,6 +151,20 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.activeScanDetail = data;
         this.isLoading = false;
+
+        // Ensure any existing AiCritique value from API or local list cache is parsed and retained
+        const localScan = this.scansSummaryList.find(s => (s.scanId || s.ScanId) === scanId);
+        const existingCritique = data.aiCritique || data.AiCritique || data.critiqueText || data.CritiqueText || 
+                                 (localScan ? (localScan.aiCritique || localScan.AiCritique) : '') || '';
+        
+        if (existingCritique) {
+          this.activeScanDetail.aiCritique = existingCritique;
+          this.activeScanDetail.AiCritique = existingCritique;
+          if (localScan) {
+            localScan.aiCritique = existingCritique;
+            localScan.AiCritique = existingCritique;
+          }
+        }
 
         // Step 1: Bind global confidence decimal (e.g. 0.9293 -> 92.93%)
         const rawConfidence = data.confidence !== undefined ? data.confidence : data.Confidence;
@@ -480,5 +508,102 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
         alert('Failed to delete the scan record. Please try again.');
       }
     });
+  }
+
+  /**
+   * Dispatches the API request to run AI clinical audit critique feedback.
+   */
+  runAiCritique() {
+    const scanId = this.selectedScanId;
+    if (!scanId) return;
+
+    this.isCritiqueLoading = true;
+    this.critiqueError = null;
+
+    this.userUploadsService.triggerScanCritique(scanId).subscribe({
+      next: (res) => {
+        this.isCritiqueLoading = false;
+        
+        const succeeded = res.succeeded !== undefined ? res.succeeded : res.Succeeded;
+        const critiqueText = res.critiqueText !== undefined ? res.critiqueText : res.CritiqueText;
+        const errorMessage = res.errorMessage !== undefined ? res.errorMessage : res.ErrorMessage;
+
+        if (succeeded === false) {
+          this.critiqueError = errorMessage || 'An error occurred during critique generation.';
+        } else {
+          // Hydrate the local object structures immediately to prevent flickering
+          if (this.activeScanDetail) {
+            this.activeScanDetail.aiCritique = critiqueText;
+            this.activeScanDetail.AiCritique = critiqueText;
+          }
+          const summaryItem = this.scansSummaryList.find(s => (s.scanId || s.ScanId) === scanId);
+          if (summaryItem) {
+            summaryItem.aiCritique = critiqueText;
+            summaryItem.AiCritique = critiqueText;
+          }
+        }
+      },
+      error: (err) => {
+        this.isCritiqueLoading = false;
+        this.critiqueError = err.error?.errorMessage || err.error?.ErrorMessage || err.message || 'Failed to trigger critique generation.';
+      }
+    });
+  }
+
+  /**
+   * Parses the clinical critique block of text into structured HTML with red/yellow/green indicators and bolded terms.
+   */
+  getStructuredCritiqueHtml(text: string): string {
+    if (!text) return '';
+    
+    // Split sentences
+    const sentences = text.split(/(?<=\.|\?|!)\s+/);
+    
+    let html = '<div class="space-y-3.5">';
+    
+    for (let sentence of sentences) {
+      sentence = sentence.trim();
+      if (!sentence) continue;
+      
+      // Determine prefix icon & text color class based on context/sentiment analysis
+      let iconColor = 'bg-gray-400';
+      let textClass = 'text-gray-700';
+      
+      const lower = sentence.toLowerCase();
+      if (lower.includes('correctly') || lower.includes('aligning') || lower.includes('successful')) {
+        iconColor = 'bg-[#10B981]'; // Emerald/Green for correct inferences
+      } else if (lower.includes('over-diagnoses') || lower.includes('misinterpreting') || lower.includes('likely') || lower.includes('however')) {
+        iconColor = 'bg-[#F59E0B]'; // Amber/Yellow for overdiagnosis/misinterpretation warnings
+      } else if (lower.includes('inaccurate') || lower.includes('lacks') || lower.includes('failed') || lower.includes('consequently')) {
+        iconColor = 'bg-[#EF4444]'; // Red for critical recommendation failures / errors
+        textClass = 'text-gray-900 font-semibold';
+      }
+      
+      // Highlight key technical terms
+      const termsToHighlight = [
+        'high hyperpigmentation', 'hyperpigmentation', 'facial ephelides',
+        'acne, erythema, and dark circles', 'acne', 'erythema', 'dark circles',
+        'concentrated freckle pattern', 'freckle pattern',
+        'inflammatory lesions', 'vascular redness',
+        'acne and redness control routine', 'inflammatory pathology'
+      ];
+      
+      let highlighted = sentence;
+      termsToHighlight.forEach(term => {
+        const escapedTerm = term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const reg = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
+        highlighted = highlighted.replace(reg, (match) => `<strong class="text-gray-950 font-bold">${match}</strong>`);
+      });
+      
+      html += `
+        <div class="flex gap-2.5 items-start">
+          <span class="w-1.5 h-1.5 rounded-full ${iconColor} mt-1.5 shrink-0 shadow-sm"></span>
+          <p class="text-xs ${textClass} leading-relaxed">${highlighted}</p>
+        </div>
+      `;
+    }
+    
+    html += '</div>';
+    return html;
   }
 }

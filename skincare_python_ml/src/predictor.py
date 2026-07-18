@@ -29,42 +29,57 @@ except Exception as e:
 # Helper to inject intermediate layers into ONNX graph in-memory on startup
 def load_onnx_session_with_features(relative_path, providers):
     """
-    Loads an ONNX model from disk, appends its last Conv output node in-memory, 
-    and returns both the active session and the target conv tensor name.
+    Loads an ONNX model from disk, appends its last Conv output node in-memory,
+    and returns the active session, the target conv tensor name, and the true
+    number of output channels for that conv layer (read from the graph itself,
+    not guessed) so downstream code can correctly detect CHW vs HWC layout.
     """
     onnx_base = r"D:\code\Capstone_project\skincare_python_ml"
     full_path = onnx_base + relative_path
     model = onnx.load(full_path)
-    
+
     # Locate the final convolutional node automatically
     conv_nodes = [n for n in model.graph.node if n.op_type == "Conv"]
     if not conv_nodes:
         raise ValueError(f"No Conv nodes found inside model graph at: {relative_path}")
-        
-    last_conv_tensor = conv_nodes[-1].output[0]
-    
+
+    last_conv_node = conv_nodes[-1]
+    last_conv_tensor = last_conv_node.output[0]
+
+    # Weight input is always the 2nd input to a Conv node; shape[0] = out_channels
+    weight_name = last_conv_node.input[1]
+    initializer = next(
+        (i for i in model.graph.initializer if i.name == weight_name), None
+    )
+    if initializer is None:
+        raise ValueError(
+            f"Could not find weight initializer '{weight_name}' for last Conv "
+            f"node in: {relative_path}"
+        )
+    out_channels = initializer.dims[0]
+
     # Inject intermediate tracking layer into the output graph definitions
     new_output = onnx.helper.make_tensor_value_info(last_conv_tensor, onnx.TensorProto.FLOAT, None)
     model.graph.output.append(new_output)
-    
+
     # Compile directly to session string memory without writing a file to disk
     session = ort.InferenceSession(model.SerializeToString(), providers=providers)
-    return session, last_conv_tensor
+    return session, last_conv_tensor, out_channels
 
 # Load Brain 1 ONNX models with Heatmap feature trackers attached
 try:
     providers = ['CPUExecutionProvider']
     onnx_base = r"D:\code\Capstone_project\skincare_python_ml"
- 
-    session_acne, acne_conv         = load_onnx_session_with_features(r"\acne_keras\acne_mvp_model.onnx", providers)
-    session_dark_spots, spots_conv   = load_onnx_session_with_features(r"\dark_spots_keras\dark_spots_phase1.onnx", providers)
-    session_wrinkles, wrinkles_conv = load_onnx_session_with_features(r"\wrinkles_keras\wrinkles_v2_production.onnx", providers)
-    session_redness, redness_conv   = load_onnx_session_with_features(r"\redness_keras\redness_v1_production.onnx", providers)
-    session_dark_circle, circles_conv = load_onnx_session_with_features(r"\dark_circle_keras\dark_circle_final.onnx", providers)
-    
+
+    session_acne, acne_conv, acne_channels               = load_onnx_session_with_features(r"\acne_keras\acne_mvp_model.onnx", providers)
+    session_dark_spots, spots_conv, spots_channels       = load_onnx_session_with_features(r"\dark_spots_keras\dark_spots_phase1.onnx", providers)
+    session_wrinkles, wrinkles_conv, wrinkles_channels   = load_onnx_session_with_features(r"\wrinkles_keras\wrinkles_v2_production.onnx", providers)
+    session_redness, redness_conv, redness_channels      = load_onnx_session_with_features(r"\redness_keras\redness_v1_production.onnx", providers)
+    session_dark_circle, circles_conv, circles_channels  = load_onnx_session_with_features(r"\dark_circle_keras\dark_circle_final.onnx", providers)
+
     # Gender model stays standard (no heatmaps needed)
     session_gender                  = ort.InferenceSession(onnx_base + r"\gender_keras\gender_production_fixed.onnx", providers=providers)
- 
+
     # Cache input names for prediction mapping
     in_acne        = session_acne.get_inputs()[0].name
     in_dark_spots  = session_dark_spots.get_inputs()[0].name
@@ -72,12 +87,14 @@ try:
     in_redness     = session_redness.get_inputs()[0].name
     in_dark_circle = session_dark_circle.get_inputs()[0].name
     in_gender      = session_gender.get_inputs()[0].name
- 
+
     print("✅ Brain 1 (ONNX) loaded successfully with intermediate feature maps.")
 except Exception as e:
     print(f"❌ Brain 1 ONNX load failed: {e}")
     session_acne = session_dark_spots = session_wrinkles = None
     session_redness = session_dark_circle = session_gender = None
+    acne_channels = spots_channels = wrinkles_channels = None
+    redness_channels = circles_channels = None
 
 # ---------------------------------------------------------------------------
 # 2. IMAGE PROCESSING (Streamlined & Cleaned)
@@ -107,57 +124,73 @@ def process_image(image_bytes: bytes):
     return tensor_a, tensor_b
 
 # ---------------------------------------------------------------------------
-# 3. FIXED HIGH-PERFORMANCE HEATMAP EXTRACTOR PIPELINE UTILITY
+# 3. HEATMAP EXTRACTOR PIPELINE UTILITY
 # ---------------------------------------------------------------------------
-def extract_pipeline_heatmap(session, last_conv_tensor, target_node_name, model_input):
+def extract_pipeline_heatmap(session, last_conv_tensor, target_node_name, model_input, out_channels):
     """
     Computes a forward pass on an open session, isolates convolutional tensors safely,
     applies adaptive 40% noise reduction, and outputs a 50,176 element 1D array.
+
+    out_channels: the true number of output filters for the target conv layer,
+    read directly from the ONNX graph's weight tensor (see load_onnx_session_with_features).
+    Used to correctly detect CHW vs HWC layout instead of guessing from hardcoded values.
     """
     try:
         # 1. Gather all output names from the current session runtime
         output_names = [o.name for o in session.get_outputs()]
-        
-        # Verify both target tensors exist inside the session graph mapping
+
+        # Verify the target tensor exists inside the session graph mapping
         if last_conv_tensor not in output_names:
             raise ValueError(f"Target node '{last_conv_tensor}' is missing from the session outputs.")
-            
+
         pred_node = [n for n in output_names if n != last_conv_tensor][0]
-        
+
         # Run inference and map output names directly to separate variables
         outputs = session.run([pred_node, last_conv_tensor], {target_node_name: model_input})
-        
+
         # Create a clean dictionary mapping tensor names to their raw array results
         output_map = dict(zip([pred_node, last_conv_tensor], outputs))
-        
-        # FIXED: Extract ONLY the dedicated convolutional tensor array explicitly by name!
+
+        # Extract ONLY the dedicated convolutional tensor array explicitly by name
         f_map = output_map[last_conv_tensor][0]
-        
-        # 2. Dynamically manage channels layout format matching (NCHW vs NHWC)
-        if f_map.shape[0] == 2048 or f_map.shape[0] == 512:
-            f_map = np.transpose(f_map, (1, 2, 0))
-            
-        # Max-pooling isolates focal feature changes while filtering background room haze
+
+        # 2. Correctly detect CHW vs HWC using the actual known channel count
+        if f_map.shape[0] == out_channels:
+            f_map = np.transpose(f_map, (1, 2, 0))   # CHW -> HWC
+        elif f_map.shape[-1] == out_channels:
+            pass  # already HWC, nothing to do
+        else:
+            raise ValueError(
+                f"Unexpected feature map shape {f_map.shape} for expected "
+                f"out_channels={out_channels} on node {last_conv_tensor}"
+            )
+
+        # Max-pooling isolates focal feature changes while filtering background noise
         heatmap_raw = np.max(f_map, axis=-1)
-        heatmap_raw = np.maximum(heatmap_raw, 0) # Apply clean structural ReLU
-        
+        heatmap_raw = np.maximum(heatmap_raw, 0)  # clean structural ReLU
+
         # 3. Bounding scale normalization [0, 1]
         max_val = np.max(heatmap_raw)
         min_val = np.min(heatmap_raw)
         if max_val - min_val > 1e-8:
             heatmap_raw = (heatmap_raw - min_val) / (max_val - min_val)
-            
-        # Apply your verified 40% threshold filter cutoff to erase outer environment borders
+        else:
+            # Flat activation map (no signal) — nothing to normalize
+            heatmap_raw = np.zeros_like(heatmap_raw)
+
+        # Apply the 40% threshold cutoff to erase weak/background activation
         heatmap_raw[heatmap_raw < 0.40] = 0.0
-        
-        # 4. Upsample directly to standard data grid bounds canvas (224, 224)
+
+        # 4. Upsample to the standard data grid bounds (224, 224)
         heatmap_224 = cv2.resize(heatmap_raw, (224, 224), interpolation=cv2.INTER_LINEAR)
-        
-        # Stretch active regions evenly across space bounds 
-        final_max = np.max(heatmap_224)
-        if final_max > 0:
-            heatmap_224 = heatmap_224 / final_max
-            
+
+        # NOTE: intentionally NOT re-normalizing to max=1.0 here.
+        # Re-scaling after the threshold would always stretch the surviving
+        # pixels back up to full intensity, making every heatmap look
+        # "maximally hot" regardless of how strong the real activation was.
+        # Just clip to guard against small interpolation overshoot from resize.
+        heatmap_224 = np.clip(heatmap_224, 0.0, 1.0)
+
         # Flatten array matrix grid into 1D data list contract for database transmission
         return heatmap_224.flatten().round(4).tolist()
 
@@ -302,7 +335,7 @@ def compute_confidence(rf_model, rf_input: np.ndarray, predictions: np.ndarray) 
         return round(float(np.mean(confidences)), 4)
     except Exception:
         return 0.0  # fallback if proba not available
-    
+
 # ---------------------------------------------------------------------------
 # 6. MASTER PIPELINE
 # ---------------------------------------------------------------------------
@@ -320,16 +353,14 @@ def analyze_face_pipeline(image_bytes: bytes, user_age) -> dict:
     onnx_input_tensor = tensor_b.astype(np.float32)
 
     # ── Step 2: Spatial Feature Heatmap Generation ─────────────────────────
-    # Run the optimized channel-aggregation extraction logic across all 5 models simultaneously
     print("[Inference] Computing diagnostic heatmaps via raw forward passes...")
-    acne_map        = extract_pipeline_heatmap(session_acne, acne_conv, in_acne, onnx_input_tensor)
-    dark_spots_map  = extract_pipeline_heatmap(session_dark_spots, spots_conv, in_dark_spots, onnx_input_tensor)
-    wrinkles_map    = extract_pipeline_heatmap(session_wrinkles, wrinkles_conv, in_wrinkles, onnx_input_tensor)
-    redness_map     = extract_pipeline_heatmap(session_redness, redness_conv, in_redness, onnx_input_tensor)
-    dark_circles_map = extract_pipeline_heatmap(session_dark_circle, circles_conv, in_dark_circle, onnx_input_tensor)
+    acne_map          = extract_pipeline_heatmap(session_acne, acne_conv, in_acne, onnx_input_tensor, acne_channels)
+    dark_spots_map    = extract_pipeline_heatmap(session_dark_spots, spots_conv, in_dark_spots, onnx_input_tensor, spots_channels)
+    wrinkles_map      = extract_pipeline_heatmap(session_wrinkles, wrinkles_conv, in_wrinkles, onnx_input_tensor, wrinkles_channels)
+    redness_map       = extract_pipeline_heatmap(session_redness, redness_conv, in_redness, onnx_input_tensor, redness_channels)
+    dark_circles_map  = extract_pipeline_heatmap(session_dark_circle, circles_conv, in_dark_circle, onnx_input_tensor, circles_channels)
 
     # ── Step 3: Diagnostic Scoring Calculations ────────────────────────────
-    # Extract baseline prediction nodes to compute severity percentages
     raw_acne         = session_acne.run(None, {in_acne: onnx_input_tensor})[0][0]
     raw_dark_spots   = session_dark_spots.run(None, {in_dark_spots: onnx_input_tensor})[0][0]
     raw_wrinkles     = session_wrinkles.run(None, {in_wrinkles: onnx_input_tensor})[0][0]
@@ -342,9 +373,9 @@ def analyze_face_pipeline(image_bytes: bytes, user_age) -> dict:
     wrinkles_val     = round(float(raw_wrinkles[0] * 100), 2)
     redness_val      = round(float(raw_redness[0] * 100), 2)
     dark_circles_val = round(float(raw_dark_circles[0] * 100), 2)
-    
+
     # Handle binary classification mapping for gender Female is 0 and Male is 1
-    gender_num = 0 if raw_gender[0] < 0.5 else 1 
+    gender_num = 0 if raw_gender[0] < 0.5 else 1
     gender_val = "Female" if gender_num == 0 else "Male"
 
     diagnostics = {
@@ -355,7 +386,7 @@ def analyze_face_pipeline(image_bytes: bytes, user_age) -> dict:
         "dark_circles": dark_circles_val,
         "gender":       gender_val,
     }
-    
+
     # ── Step 4: Brain 2 — Random Forest recommendation engine ──────────────
     routine_class  = "MANUAL_REVIEW"
     am, pm, weekly = [], [], []

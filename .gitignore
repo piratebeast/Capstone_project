@@ -1,0 +1,32 @@
+# === Custom Security ===
+.env
+
+# === Python / FastAPI ML Layer ===
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# === .NET 9 Backend Layer ===
+bin/
+obj/
+*.user
+*.userosscache
+*.sln.docstates
+
+# === Angular Frontend Layer ===
+node_modules/
+.angular/
+dist/
+tmp/
+.sass-cache/
+connect.lock
+coverage/
+
+# === IDE & OS Cache ===
+.vs/
+.vscode/
+.DS_Store
+Thumbs.db

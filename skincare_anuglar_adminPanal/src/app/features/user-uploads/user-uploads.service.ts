@@ -85,5 +85,27 @@ export class UserUploadsService {
       })
     );
   }
+
+  /**
+   * Helper to retrieve the active JWT token on demand.
+   */
+  getJwtToken(): string | null {
+    return this.token;
+  }
+
+  /**
+   * Triggers the clinical critique background multimodal AI audit for a specific scan ID.
+   */
+  triggerScanCritique(scanId: string): Observable<any> {
+    return this.ensureAuthenticated().pipe(
+      switchMap(() => {
+        return this.http.post<any>(`${this.baseUrl}/AdminDashboard/scans/${scanId}/critique`, {}, {
+          headers: new HttpHeaders({
+            'Authorization': `Bearer ${this.getJwtToken() || ''}`
+          })
+        });
+      })
+    );
+  }
 }
 

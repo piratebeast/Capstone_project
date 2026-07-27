@@ -1,8 +1,6 @@
 <div class="h-full px-6 flex items-center justify-between">
   <!-- Left Side: Title or Admin Logo -->
   <div class="flex items-center gap-2">
-    <!-- According to image 2, there is a small logo and "SkinAI Admin" in the top bar -->
-    <!-- But actually the layout just has the main content title. Let's just leave it empty or add the SkinAI Admin text -->
     <div class="text-[#004B8F] font-semibold text-lg flex items-center gap-2">
       <ng-icon name="heroBeaker" class="text-xl"></ng-icon>
       SkinAI Admin
@@ -10,31 +8,24 @@
   </div>
 
   <!-- Right side actions -->
-  <div class="flex items-center gap-6">
-    <!-- Search -->
-    <div class="relative">
-      <ng-icon name="heroMagnifyingGlass" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></ng-icon>
-      <input type="text" placeholder="Search models, metrics..." 
-             class="pl-10 pr-4 py-2 w-64 rounded-full bg-gray-100 border border-transparent text-sm focus:bg-white focus:border-gray-300 focus:ring-0 outline-none transition-colors placeholder-gray-400">
-    </div>
-
-    <!-- Icons -->
-    <div class="flex items-center gap-4 text-gray-600">
-      <button class="hover:text-gray-900 transition-colors relative">
-        <ng-icon name="heroBell" class="text-xl"></ng-icon>
-        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+  <div class="flex items-center gap-5">
+    <!-- Profile & Logout -->
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full overflow-hidden border border-gray-200 shadow-xs">
+        <img src="https://ui-avatars.com/api/?name=Clinical+Admin&background=004B8F&color=fff" alt="User Profile" class="w-full h-full object-cover">
+      </div>
+      <div class="hidden md:flex flex-col text-left">
+        <span class="text-xs font-bold text-gray-800 leading-tight">Admin User</span>
+        <span class="text-[10px] text-gray-400 font-medium">admin&#64;skinai.local</span>
+      </div>
+      <button 
+        (click)="logout()" 
+        title="Sign Out Admin" 
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 text-xs font-bold transition-colors border border-transparent hover:border-red-100 ml-1"
+      >
+        <ng-icon name="heroArrowRightOnRectangle" class="text-base"></ng-icon>
+        <span class="hidden sm:inline">Logout</span>
       </button>
-      <button class="hover:text-gray-900 transition-colors">
-        <ng-icon name="heroQuestionMarkCircle" class="text-xl"></ng-icon>
-      </button>
-      <button class="hover:text-gray-900 transition-colors">
-        <ng-icon name="heroCog8Tooth" class="text-xl"></ng-icon>
-      </button>
-    </div>
-
-    <!-- Profile -->
-    <div class="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-      <img src="https://ui-avatars.com/api/?name=Admin+User&background=004B8F&color=fff" alt="User Profile" class="w-full h-full object-cover">
     </div>
   </div>
 </div>

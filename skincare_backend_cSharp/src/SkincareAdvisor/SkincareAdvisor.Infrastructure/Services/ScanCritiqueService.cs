@@ -27,7 +27,7 @@ namespace SkincareAdvisor.Infrastructure.Services
             var critique = new ScanCritique
             {
                 ScanHistoryId = scan.Id,
-                ModelUsed = "gemini-flash-latest",
+                ModelUsed = "gemini-3.1-flash-lite",
                 GeneratedAt = DateTime.UtcNow
             };
 
@@ -70,7 +70,8 @@ namespace SkincareAdvisor.Infrastructure.Services
                     }
                 };
 
-                var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={_apiKey}";
+                //var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={_apiKey}";
+                var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={_apiKey}";
                 var response = await _http.PostAsJsonAsync(url, requestBody);
                 var raw = await response.Content.ReadAsStringAsync();
 

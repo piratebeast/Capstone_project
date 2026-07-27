@@ -1,0 +1,129 @@
+<div class="min-h-screen w-full bg-gradient-to-br from-slate-900 via-[#002D57] to-[#004B8F] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
+  
+  <!-- Subtle background glow circles -->
+  <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#004B8F]/30 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 overflow-hidden relative z-10">
+    
+    <!-- Top Header Banner -->
+    <div class="bg-gradient-to-r from-[#003B70] to-[#004B8F] p-8 text-white text-center relative">
+      <div class="inline-flex items-center justify-center w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 mb-3 shadow-inner">
+        <ng-icon name="heroBeaker" class="text-3xl text-blue-200"></ng-icon>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight">SkinAI Advisor</h1>
+      <p class="text-xs text-blue-200 uppercase tracking-widest font-semibold mt-1">Clinical Admin Portal</p>
+      
+      <div class="absolute top-4 right-4 flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-full text-[10px] font-bold text-blue-100 uppercase tracking-wider border border-white/10">
+        <ng-icon name="heroShieldCheck" class="text-emerald-400 text-sm"></ng-icon>
+        Admin Only
+      </div>
+    </div>
+
+    <!-- Login Form Body -->
+    <div class="p-8">
+
+      @if (errorMessage) {
+        <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 text-red-700 animate-fadeIn">
+          <ng-icon name="heroExclamationTriangle" class="text-xl text-red-500 shrink-0 mt-0.5"></ng-icon>
+          <div class="text-xs font-medium leading-relaxed">
+            <span class="font-bold block mb-0.5">Authentication Failure</span>
+            {{ errorMessage }}
+          </div>
+        </div>
+      }
+
+      <form (ngSubmit)="onSubmit()" class="space-y-5">
+        
+        <!-- Email Input Field -->
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+            Admin Email Address
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <ng-icon name="heroEnvelope" class="text-lg"></ng-icon>
+            </div>
+            <input 
+              type="email" 
+              [(ngModel)]="email" 
+              name="email"
+              required
+              placeholder="admin@skinai.local"
+              class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#004B8F] focus:ring-2 focus:ring-[#004B8F]/20 outline-none transition-all"
+            />
+          </div>
+        </div>
+
+        <!-- Password Input Field -->
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+              Admin Password
+            </label>
+          </div>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+              <ng-icon name="heroLockClosed" class="text-lg"></ng-icon>
+            </div>
+            <input 
+              [type]="showPassword ? 'text' : 'password'" 
+              [(ngModel)]="password" 
+              name="password"
+              required
+              placeholder="••••••••••••"
+              class="w-full pl-10 pr-11 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#004B8F] focus:ring-2 focus:ring-[#004B8F]/20 outline-none transition-all"
+            />
+            <button 
+              type="button" 
+              (click)="togglePasswordVisibility()"
+              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+            >
+              <ng-icon [name]="showPassword ? 'heroEyeSlash' : 'heroEye'" class="text-lg"></ng-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit"
+          [disabled]="isLoading"
+          class="w-full py-3.5 px-4 bg-[#004B8F] hover:bg-[#003B70] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 shadow-md shadow-blue-900/20 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#004B8F]/40 active:scale-[0.99] disabled:opacity-75 disabled:cursor-not-allowed"
+        >
+          @if (isLoading) {
+            <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>Authenticating Admin...</span>
+          } @else {
+            <ng-icon name="heroSparkles" class="text-base"></ng-icon>
+            <span>Sign In to Dashboard</span>
+          }
+        </button>
+      </form>
+
+      <!-- Seeded Credentials Preset Box -->
+      <div class="mt-6 pt-5 border-t border-gray-100">
+        <div class="bg-blue-50/70 border border-blue-100 rounded-xl p-3.5 flex items-center justify-between">
+          <div class="text-[11px] text-blue-900 leading-tight">
+            <span class="font-bold block text-blue-950 mb-0.5">Seeded Admin Credentials</span>
+            <span class="text-blue-700 font-mono text-[10px]">admin&#64;skinai.local</span>
+          </div>
+          <button 
+            type="button" 
+            (click)="fillAdminCredentials()"
+            class="px-2.5 py-1 bg-white hover:bg-blue-100 text-[#004B8F] border border-blue-200 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shadow-2xs"
+          >
+            Auto-fill
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer Security Notice -->
+    <div class="bg-gray-50 px-8 py-3.5 border-t border-gray-100 text-center text-[11px] text-gray-500 font-medium">
+      Protected System • Authorized Medical & Technical Staff Only
+    </div>
+
+  </div>
+
+</div>

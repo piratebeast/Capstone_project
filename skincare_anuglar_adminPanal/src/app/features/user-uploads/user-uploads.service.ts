@@ -2,23 +2,26 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
+import { AuthService } from '../../core/services/auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserUploadsService {
   private baseUrl = 'https://localhost:7126/api';
-  private token: string | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
   /**
    * Internal helper to guarantee a valid Admin bearer token before making API requests.
-   * Performs automatic background login using the system admin credentials if not already authenticated.
    */
   private ensureAuthenticated(): Observable<string> {
-    if (this.token) {
-      return of(this.token);
+    const activeToken = this.authService.getToken();
+    if (activeToken) {
+      return of(activeToken);
     }
     return this.http.post<any>(`${this.baseUrl}/auth/login`, {
       email: 'admin@skinai.local',
@@ -26,14 +29,15 @@ export class UserUploadsService {
     }).pipe(
       tap(res => {
         if (res && res.token) {
-          this.token = res.token;
+          localStorage.setItem('skinai_admin_token', res.token);
         }
       }),
       map(res => {
-        if (!this.token) {
+        const token = res?.token || activeToken;
+        if (!token) {
           throw new Error('Authentication failed: No token returned from server.');
         }
-        return this.token;
+        return token;
       })
     );
   }
@@ -90,7 +94,7 @@ export class UserUploadsService {
    * Helper to retrieve the active JWT token on demand.
    */
   getJwtToken(): string | null {
-    return this.token;
+    return this.authService.getToken();
   }
 
   /**
@@ -104,6 +108,18 @@ export class UserUploadsService {
             'Authorization': `Bearer ${this.getJwtToken() || ''}`
           })
         });
+      })
+    );
+  }
+
+  /**
+   * Fetches the prescribed skincare routine regimen for a specific scan ID.
+   */
+  getScanRoutine(scanId: string): Observable<any> {
+    return this.ensureAuthenticated().pipe(
+      switchMap(token => {
+        const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+        return this.http.get<any>(`${this.baseUrl}/Scan/routine/${scanId}`, { headers });
       })
     );
   }

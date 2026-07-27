@@ -152,6 +152,130 @@
                   <ng-icon name="heroMap"></ng-icon> Toggle Heatmaps
                 </button>
               </div>
+
+              <!-- Prescribed Skincare Regimen Routine Section -->
+              <div class="mt-2 bg-[#F8FAFC] border border-gray-200 rounded-xl p-4 flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-gray-200/80 pb-2.5">
+                  <div class="flex items-center gap-2">
+                    <span class="p-1.5 bg-[#E6F0FD] text-[#004B8F] rounded-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" /></svg>
+                    </span>
+                    <div>
+                      <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wide">Prescribed Routine</h3>
+                      <p class="text-[10px] text-gray-500 font-medium">Personalized Treatment Plan</p>
+                    </div>
+                  </div>
+                  @if (routineData?.routineClass || routineData?.RoutineClass) {
+                    <span class="px-2 py-0.5 bg-[#004B8F] text-white rounded-md text-[10px] font-bold tracking-wider uppercase">
+                      {{ routineData.routineClass || routineData.RoutineClass }}
+                    </span>
+                  }
+                </div>
+
+                <!-- Sub-tabs for Morning AM, Evening PM, Weekly -->
+                <div class="flex bg-gray-200/60 p-1 rounded-lg gap-1">
+                  <button 
+                    (click)="setRoutineTab('am')"
+                    [class]="'flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ' + 
+                             (activeRoutineTab === 'am' ? 'bg-white text-[#004B8F] shadow-sm' : 'text-gray-600 hover:text-gray-900')"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 text-amber-500"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>
+                    Daily AM
+                  </button>
+                  <button 
+                    (click)="setRoutineTab('pm')"
+                    [class]="'flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ' + 
+                             (activeRoutineTab === 'pm' ? 'bg-white text-[#004B8F] shadow-sm' : 'text-gray-600 hover:text-gray-900')"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 text-indigo-500"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" /></svg>
+                    Daily PM
+                  </button>
+                  <button 
+                    (click)="setRoutineTab('weekly')"
+                    [class]="'flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ' + 
+                             (activeRoutineTab === 'weekly' ? 'bg-white text-[#004B8F] shadow-sm' : 'text-gray-600 hover:text-gray-900')"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 text-emerald-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
+                    Weekly
+                  </button>
+                </div>
+
+                <!-- Content Panel -->
+                <div class="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                  @if (isRoutineLoading) {
+                    <div class="py-6 text-center text-gray-400 text-xs flex flex-col items-center justify-center gap-2">
+                      <div class="w-5 h-5 border-2 border-[#004B8F] border-t-transparent rounded-full animate-spin"></div>
+                      <span class="font-medium text-[11px]">Loading routine data...</span>
+                    </div>
+                  } @else if (routineError) {
+                    <div class="p-3 text-center text-amber-700 bg-amber-50 rounded-lg text-xs font-medium border border-amber-200">
+                      {{ routineError }}
+                    </div>
+                  } @else if (routineData) {
+                    <!-- AM TAB -->
+                    @if (activeRoutineTab === 'am') {
+                      @let amSteps = routineData.regimenSchedule?.dailyAm || routineData.RegimenSchedule?.DailyAm || routineData.dailyAm || [];
+                      @if (amSteps.length === 0) {
+                        <div class="p-3 text-center text-gray-400 text-xs font-medium">No AM steps specified.</div>
+                      } @else {
+                        @for (step of amSteps; track step.step || step.Step) {
+                          <div class="bg-white border border-gray-200 rounded-lg p-2.5 flex items-start gap-2.5 shadow-2xs">
+                            <span class="w-5 h-5 rounded-full bg-[#E6F0FD] text-[#004B8F] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                              {{ step.step || step.Step }}
+                            </span>
+                            <div class="flex-1 min-w-0">
+                              <div class="text-xs font-bold text-gray-900 leading-snug">{{ step.product || step.Product }}</div>
+                              <div class="text-[11px] text-gray-500 font-medium leading-tight mt-0.5">{{ step.purpose || step.Purpose }}</div>
+                            </div>
+                          </div>
+                        }
+                      }
+                    }
+
+                    <!-- PM TAB -->
+                    @if (activeRoutineTab === 'pm') {
+                      @let pmSteps = routineData.regimenSchedule?.dailyPm || routineData.RegimenSchedule?.DailyPm || routineData.dailyPm || [];
+                      @if (pmSteps.length === 0) {
+                        <div class="p-3 text-center text-gray-400 text-xs font-medium">No PM steps specified.</div>
+                      } @else {
+                        @for (step of pmSteps; track step.step || step.Step) {
+                          <div class="bg-white border border-gray-200 rounded-lg p-2.5 flex items-start gap-2.5 shadow-2xs">
+                            <span class="w-5 h-5 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                              {{ step.step || step.Step }}
+                            </span>
+                            <div class="flex-1 min-w-0">
+                              <div class="text-xs font-bold text-gray-900 leading-snug">{{ step.product || step.Product }}</div>
+                              <div class="text-[11px] text-gray-500 font-medium leading-tight mt-0.5">{{ step.purpose || step.Purpose }}</div>
+                            </div>
+                          </div>
+                        }
+                      }
+                    }
+
+                    <!-- WEEKLY TAB -->
+                    @if (activeRoutineTab === 'weekly') {
+                      @let weeklyList = routineData.regimenSchedule?.weeklyTreatments || routineData.RegimenSchedule?.WeeklyTreatments || routineData.weeklyTreatments || [];
+                      @if (weeklyList.length === 0) {
+                        <div class="p-3 text-center text-gray-400 text-xs font-medium">No weekly treatments specified.</div>
+                      } @else {
+                        @for (item of weeklyList; track item.product || item.Product) {
+                          <div class="bg-white border border-gray-200 rounded-lg p-2.5 flex flex-col gap-1 shadow-2xs">
+                            <div class="flex justify-between items-center">
+                              <span class="text-xs font-bold text-gray-900">{{ item.product || item.Product }}</span>
+                              <span class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold rounded">
+                                {{ item.frequency || item.Frequency }}
+                              </span>
+                            </div>
+                            <div class="text-[11px] text-gray-500 font-medium leading-tight">{{ item.instructions || item.Instructions }}</div>
+                          </div>
+                        }
+                      }
+                    }
+                  } @else {
+                    <div class="p-3 text-center text-gray-400 text-xs font-medium">Select a scan to view routine.</div>
+                  }
+                </div>
+              </div>
             </div>
 
             <!-- Right Side: Analysis and Progress Metrics -->
@@ -313,28 +437,29 @@
                 }
 
                 <div class="pt-2 flex-1 flex flex-col justify-center">
-                  @if (activeScanDetail?.aiCritique || activeScanDetail?.AiCritique) {
-                    <!-- Populated Critique Text -->
-                    <div [innerHTML]="getStructuredCritiqueHtml(activeScanDetail.aiCritique || activeScanDetail.AiCritique)"></div>
-                  } @else if (critiqueError) {
-                    <!-- Error State Panel -->
-                    <div class="flex flex-col items-center justify-center text-center p-4 border border-red-200 bg-red-50/50 rounded-lg gap-3">
-                      <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-[#EF4444]">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+                  @if (critiqueInfo.hasCritique && critiqueInfo.succeeded) {
+                    <!-- Populated Critique Text (succeeded === true) -->
+                    <div [innerHTML]="getStructuredCritiqueHtml(critiqueInfo.critiqueText)"></div>
+                  } @else if (critiqueInfo.hasCritique && !critiqueInfo.succeeded) {
+                    <!-- Failed Critique State (succeeded === false) -->
+                    <div class="flex flex-col items-center justify-center text-center p-4 border border-amber-200 bg-amber-50/60 rounded-lg gap-3">
+                      <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
                       </div>
                       <div class="flex flex-col gap-1">
-                        <span class="text-[10px] font-bold text-red-700 uppercase tracking-wider">Audit Verification Failed</span>
-                        <p class="text-xs text-[#EF4444] font-medium leading-normal">{{ critiqueError }}</p>
+                        <span class="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Critique Generation Unavailable</span>
+                        <p class="text-xs text-amber-700 font-medium leading-normal">{{ critiqueInfo.errorMessage }}</p>
                       </div>
                       <button 
                         (click)="runAiCritique()"
-                        class="px-3.5 py-1.5 bg-[#EF4444] hover:bg-red-700 text-white rounded text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm focus:outline-none"
+                        class="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white border border-gray-900 rounded-lg text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 tracking-wide uppercase shadow-md focus:outline-none mt-1"
                       >
-                        Retry Audit
+                        <ng-icon name="heroSparkles" class="text-white text-sm"></ng-icon>
+                        Run AI Audit Verification
                       </button>
                     </div>
                   } @else {
-                    <!-- Run Verification CTA -->
+                    <!-- No critique exists yet (aiCritique is null/undefined) -->
                     <div class="flex flex-col items-center justify-center text-center p-2 gap-4">
                       <p class="text-xs text-gray-500 leading-relaxed">
                         Clinical AI Critique feedback is not generated for this scan yet. Trigger a clinical audit run using Google AI Studio.

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -69,6 +69,12 @@ namespace SkincareAdvisor.API.Controllers
                     Wrinkles = scan.WrinklesHeatmap,
                     Redness = scan.RednessHeatmap,
                     DarkCircles = scan.DarkCirclesHeatmap
+                },
+                RegimenSchedule = new
+                {
+                    DailyAm = scan.DailyAm,
+                    DailyPm = scan.DailyPm,
+                    WeeklyTreatments = scan.WeeklyTreatments
                 },
                 // NEW: expose critique so the frontend can hydrate on load/refresh
                 AiCritique = latestCritique?.CritiqueText,

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics; // <-- REQUIRED FOR HIGH-PRECISION STOPWATCH TIMING
 using System.IO;
 using System.Linq;
@@ -137,13 +137,6 @@ namespace SkincareAdvisor.API.Controllers
                 _context.SystemPerformanceLogs.Add(performanceLog);
                 await _context.SaveChangesAsync();
 
-                // NEW: Inject IScanCritiqueService into your constructor, then execute:
-                var critiqueResult = await _scanCritiqueService.GenerateCritiqueAsync(scanHistory);
-                _context.ScanCritiques.Add(critiqueResult);
-
-                // Keep your existing save and return block:
-                await _context.SaveChangesAsync();
-
                 return Ok(new
                 {
                     Message = "Scan complete and saved successfully!",
@@ -192,9 +185,10 @@ namespace SkincareAdvisor.API.Controllers
         public async Task<IActionResult> GetSpecificRoutine(Guid scanId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("Admin");
 
             var scan = await _context.ScanHistories
-                .FirstOrDefaultAsync(s => s.Id == scanId && s.UserId == userId);
+                .FirstOrDefaultAsync(s => s.Id == scanId && (s.UserId == userId || isAdmin));
 
             if (scan == null)
             {

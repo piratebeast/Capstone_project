@@ -21,8 +21,13 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
   isMenuOpen = false;
   showDeleteConfirmModal = false;
   isDeleting = false;
+  // Critique & Routine states
   isCritiqueLoading = false;
   critiqueError: string | null = null;
+  routineData: any = null;
+  isRoutineLoading = false;
+  routineError: string | null = null;
+  activeRoutineTab: 'am' | 'pm' | 'weekly' = 'am';
 
   // Scans list and loading states
   scansSummaryList: any[] = [];
@@ -64,7 +69,7 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
   constructor(
     private userUploadsService: UserUploadsService,
     private route: ActivatedRoute
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
@@ -81,6 +86,10 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
     if (this.pollSubscription) {
       this.pollSubscription.unsubscribe();
     }
+  }
+
+  setRoutineTab(tab: 'am' | 'pm' | 'weekly') {
+    this.activeRoutineTab = tab;
   }
 
   // Helper getters
@@ -144,19 +153,53 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
     this.isCritiqueLoading = false;
     this.critiqueError = null;
 
+    this.routineData = null;
+    this.isRoutineLoading = true;
+    this.routineError = null;
+
     this.activeImage = null;
     this.clearCanvas();
+
+    // Fetch Routine details
+    this.userUploadsService.getScanRoutine(scanId).subscribe({
+      next: (routine) => {
+        this.routineData = routine;
+        this.isRoutineLoading = false;
+        this.routineError = null;
+      },
+      error: (err) => {
+        console.error(`Failed to load routine for scan ID: ${scanId}`, err);
+        this.isRoutineLoading = false;
+        if (!this.routineData) {
+          this.routineError = 'Routine information unavailable';
+        }
+      }
+    });
 
     this.userUploadsService.getScanDetail(scanId).subscribe({
       next: (data) => {
         this.activeScanDetail = data;
         this.isLoading = false;
 
+        const sched = data.regimenSchedule || data.RegimenSchedule;
+        if (sched || data.dailyAm || data.DailyAm) {
+          this.routineData = {
+            routineClass: data.routineClass || data.RoutineClass,
+            regimenSchedule: sched || {
+              dailyAm: data.dailyAm || data.DailyAm,
+              dailyPm: data.dailyPm || data.DailyPm,
+              weeklyTreatments: data.weeklyTreatments || data.WeeklyTreatments
+            }
+          };
+          this.isRoutineLoading = false;
+          this.routineError = null;
+        }
+
         // Ensure any existing AiCritique value from API or local list cache is parsed and retained
         const localScan = this.scansSummaryList.find(s => (s.scanId || s.ScanId) === scanId);
-        const existingCritique = data.aiCritique || data.AiCritique || data.critiqueText || data.CritiqueText || 
-                                 (localScan ? (localScan.aiCritique || localScan.AiCritique) : '') || '';
-        
+        const existingCritique = data.aiCritique || data.AiCritique || data.critiqueText || data.CritiqueText ||
+          (localScan ? (localScan.aiCritique || localScan.AiCritique) : '') || '';
+
         if (existingCritique) {
           this.activeScanDetail.aiCritique = existingCritique;
           this.activeScanDetail.AiCritique = existingCritique;
@@ -481,10 +524,10 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
       next: () => {
         // Find index of the deleted item in the summary list
         const deletedIdx = this.scansSummaryList.findIndex(s => (s.scanId || s.ScanId) === deletedId);
-        
+
         // Remove from list
         this.scansSummaryList = this.scansSummaryList.filter(s => (s.scanId || s.ScanId) !== deletedId);
-        
+
         this.showDeleteConfirmModal = false;
         this.isDeleting = false;
 
@@ -510,6 +553,68 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
     });
   }
 
+  get critiqueInfo(): { hasCritique: boolean; succeeded: boolean; critiqueText: string; errorMessage: string } {
+    return this.getCritiqueInfo(this.activeScanDetail);
+  }
+
+  getCritiqueInfo(scanDetail: any): { hasCritique: boolean; succeeded: boolean; critiqueText: string; errorMessage: string } {
+    if (!scanDetail) {
+      return { hasCritique: false, succeeded: false, critiqueText: '', errorMessage: '' };
+    }
+
+    const rawCritique = scanDetail.aiCritique ?? scanDetail.AiCritique;
+    const directText = scanDetail.critiqueText ?? scanDetail.CritiqueText;
+    const directError = scanDetail.errorMessage ?? scanDetail.ErrorMessage;
+
+    let explicitSucceeded: boolean | undefined = undefined;
+    if (typeof rawCritique === 'object' && rawCritique !== null) {
+      if (rawCritique.succeeded !== undefined) explicitSucceeded = Boolean(rawCritique.succeeded);
+      else if (rawCritique.Succeeded !== undefined) explicitSucceeded = Boolean(rawCritique.Succeeded);
+    }
+    if (explicitSucceeded === undefined) {
+      if (scanDetail.succeeded !== undefined) explicitSucceeded = Boolean(scanDetail.succeeded);
+      else if (scanDetail.Succeeded !== undefined) explicitSucceeded = Boolean(scanDetail.Succeeded);
+      else if (scanDetail.critiqueSucceeded !== undefined) explicitSucceeded = Boolean(scanDetail.critiqueSucceeded);
+      else if (scanDetail.CritiqueSucceeded !== undefined) explicitSucceeded = Boolean(scanDetail.CritiqueSucceeded);
+    }
+
+    if (typeof rawCritique === 'object' && rawCritique !== null) {
+      const succeeded = explicitSucceeded ?? true;
+      const text = rawCritique.critiqueText ?? rawCritique.CritiqueText ?? directText ?? '';
+      const err = rawCritique.errorMessage ?? rawCritique.ErrorMessage ?? directError ?? '';
+      return {
+        hasCritique: true,
+        succeeded,
+        critiqueText: text,
+        errorMessage: err || text || 'AI Model Critique temporarily unavailable.'
+      };
+    }
+
+    const textStr = (typeof rawCritique === 'string' ? rawCritique : (directText || '')).trim();
+    const errorStr = (directError || '').trim();
+
+    if (!textStr && !errorStr && explicitSucceeded === undefined) {
+      return { hasCritique: false, succeeded: false, critiqueText: '', errorMessage: '' };
+    }
+
+    let succeeded = explicitSucceeded;
+    if (succeeded === undefined) {
+      const lower = textStr.toLowerCase();
+      if (lower.includes('temporarily unavailable') || lower.includes('failed') || lower.includes('error') || errorStr.length > 0) {
+        succeeded = false;
+      } else {
+        succeeded = true;
+      }
+    }
+
+    return {
+      hasCritique: true,
+      succeeded,
+      critiqueText: textStr,
+      errorMessage: errorStr || textStr || 'AI Model Critique temporarily unavailable.'
+    };
+  }
+
   /**
    * Dispatches the API request to run AI clinical audit critique feedback.
    */
@@ -523,29 +628,52 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
     this.userUploadsService.triggerScanCritique(scanId).subscribe({
       next: (res) => {
         this.isCritiqueLoading = false;
-        
+
         const succeeded = res.succeeded !== undefined ? res.succeeded : res.Succeeded;
         const critiqueText = res.critiqueText !== undefined ? res.critiqueText : res.CritiqueText;
         const errorMessage = res.errorMessage !== undefined ? res.errorMessage : res.ErrorMessage;
 
-        if (succeeded === false) {
-          this.critiqueError = errorMessage || 'An error occurred during critique generation.';
-        } else {
-          // Hydrate the local object structures immediately to prevent flickering
-          if (this.activeScanDetail) {
-            this.activeScanDetail.aiCritique = critiqueText;
-            this.activeScanDetail.AiCritique = critiqueText;
-          }
-          const summaryItem = this.scansSummaryList.find(s => (s.scanId || s.ScanId) === scanId);
-          if (summaryItem) {
-            summaryItem.aiCritique = critiqueText;
-            summaryItem.AiCritique = critiqueText;
-          }
+        const isSuccess = succeeded ?? (errorMessage ? false : true);
+        const critiqueObj = {
+          succeeded: isSuccess,
+          critiqueText: critiqueText || '',
+          errorMessage: errorMessage || (isSuccess ? '' : critiqueText || 'An error occurred during critique generation.')
+        };
+
+        if (this.activeScanDetail) {
+          this.activeScanDetail.aiCritique = critiqueObj;
+          this.activeScanDetail.AiCritique = critiqueObj;
+          this.activeScanDetail.succeeded = isSuccess;
+          this.activeScanDetail.critiqueText = critiqueObj.critiqueText;
+          this.activeScanDetail.errorMessage = critiqueObj.errorMessage;
+        }
+        const summaryItem = this.scansSummaryList.find(s => (s.scanId || s.ScanId) === scanId);
+        if (summaryItem) {
+          summaryItem.aiCritique = critiqueObj;
+          summaryItem.AiCritique = critiqueObj;
+        }
+
+        if (!isSuccess) {
+          this.critiqueError = critiqueObj.errorMessage;
         }
       },
       error: (err) => {
         this.isCritiqueLoading = false;
-        this.critiqueError = err.error?.errorMessage || err.error?.ErrorMessage || err.message || 'Failed to trigger critique generation.';
+        const errMsg = err.error?.errorMessage || err.error?.ErrorMessage || err.error?.critiqueText || err.message || 'Failed to trigger critique generation.';
+        this.critiqueError = errMsg;
+
+        const critiqueObj = {
+          succeeded: false,
+          critiqueText: '',
+          errorMessage: errMsg
+        };
+
+        if (this.activeScanDetail) {
+          this.activeScanDetail.aiCritique = critiqueObj;
+          this.activeScanDetail.AiCritique = critiqueObj;
+          this.activeScanDetail.succeeded = false;
+          this.activeScanDetail.errorMessage = errMsg;
+        }
       }
     });
   }
@@ -555,20 +683,20 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
    */
   getStructuredCritiqueHtml(text: string): string {
     if (!text) return '';
-    
+
     // Split sentences
     const sentences = text.split(/(?<=\.|\?|!)\s+/);
-    
+
     let html = '<div class="space-y-3.5">';
-    
+
     for (let sentence of sentences) {
       sentence = sentence.trim();
       if (!sentence) continue;
-      
+
       // Determine prefix icon & text color class based on context/sentiment analysis
       let iconColor = 'bg-gray-400';
       let textClass = 'text-gray-700';
-      
+
       const lower = sentence.toLowerCase();
       if (lower.includes('correctly') || lower.includes('aligning') || lower.includes('successful')) {
         iconColor = 'bg-[#10B981]'; // Emerald/Green for correct inferences
@@ -578,7 +706,7 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
         iconColor = 'bg-[#EF4444]'; // Red for critical recommendation failures / errors
         textClass = 'text-gray-900 font-semibold';
       }
-      
+
       // Highlight key technical terms
       const termsToHighlight = [
         'high hyperpigmentation', 'hyperpigmentation', 'facial ephelides',
@@ -587,14 +715,14 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
         'inflammatory lesions', 'vascular redness',
         'acne and redness control routine', 'inflammatory pathology'
       ];
-      
+
       let highlighted = sentence;
       termsToHighlight.forEach(term => {
         const escapedTerm = term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
         const reg = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
         highlighted = highlighted.replace(reg, (match) => `<strong class="text-gray-950 font-bold">${match}</strong>`);
       });
-      
+
       html += `
         <div class="flex gap-2.5 items-start">
           <span class="w-1.5 h-1.5 rounded-full ${iconColor} mt-1.5 shrink-0 shadow-sm"></span>
@@ -602,7 +730,7 @@ export class UserUploadsComponent implements OnInit, OnDestroy {
         </div>
       `;
     }
-    
+
     html += '</div>';
     return html;
   }
